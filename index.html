@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0d1117" />
+  <meta name="description" content="呼吸節拍器 — 4-7-8 與 Box Breathing 冥想輔助" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="呼吸" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>呼吸節拍器</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-glow: rgba(88, 166, 255, 0.25);
+      --inhale: #58a6ff;
+      --hold: #a371f7;
+      --exhale: #3fb950;
+      --hold2: #f0883e;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      overflow-x: hidden;
+    }
+
+    body {
+      padding: 24px 16px 32px;
+      gap: 24px;
+    }
+
+    h1 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* Mode selector */
+    .mode-tabs {
+      display: flex;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      width: 100%;
+      max-width: 340px;
+    }
+
+    .mode-tab {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      line-height: 1.3;
+      text-align: center;
+    }
+
+    .mode-tab.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .mode-tab:not(.active):hover {
+      background: var(--border);
+      color: var(--text);
+    }
+
+    /* Phase info strip */
+    .phase-strip {
+      display: flex;
+      gap: 8px;
+      font-size: 0.75rem;
+      color: var(--muted);
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .phase-chip {
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+    }
+
+    /* Circle arena */
+    .arena {
+      position: relative;
+      width: min(72vw, 280px);
+      height: min(72vw, 280px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+    }
+
+    .ring-progress {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--accent);
+      transition: border-top-color 0.4s;
+      /* rotated by JS */
+    }
+
+    .breath-circle {
+      width: 52%;
+      height: 52%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.35), rgba(88,166,255,0.08) 65%);
+      box-shadow: 0 0 40px var(--accent-glow), 0 0 0 1px rgba(88,166,255,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1),
+                  background 0.5s, box-shadow 0.5s;
+      will-change: transform;
+    }
+
+    .phase-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+    }
+
+    .phase-countdown {
+      font-size: 2rem;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* States */
+    body.inhale .breath-circle {
+      transform: scale(1.55);
+      background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.45), rgba(88,166,255,0.1) 65%);
+      box-shadow: 0 0 60px rgba(88,166,255,0.4), 0 0 0 1px rgba(88,166,255,0.3);
+    }
+    body.hold .breath-circle {
+      transform: scale(1.55);
+      background: radial-gradient(circle at 38% 35%, rgba(163,113,247,0.45), rgba(163,113,247,0.1) 65%);
+      box-shadow: 0 0 60px rgba(163,113,247,0.4), 0 0 0 1px rgba(163,113,247,0.3);
+    }
+    body.exhale .breath-circle {
+      transform: scale(1.0);
+      background: radial-gradient(circle at 38% 35%, rgba(63,185,80,0.35), rgba(63,185,80,0.08) 65%);
+      box-shadow: 0 0 40px rgba(63,185,80,0.3), 0 0 0 1px rgba(63,185,80,0.2);
+    }
+    body.hold2 .breath-circle {
+      transform: scale(1.0);
+      background: radial-gradient(circle at 38% 35%, rgba(240,136,62,0.35), rgba(240,136,62,0.08) 65%);
+      box-shadow: 0 0 40px rgba(240,136,62,0.3), 0 0 0 1px rgba(240,136,62,0.2);
+    }
+    body.idle .breath-circle {
+      transform: scale(1.0);
+    }
+
+    /* Phase label colors */
+    body.inhale .phase-label  { color: var(--inhale); }
+    body.hold   .phase-label  { color: var(--hold);   }
+    body.exhale .phase-label  { color: var(--exhale); }
+    body.hold2  .phase-label  { color: var(--hold2);  }
+
+    /* Cycle counter */
+    .cycle-info {
+      font-size: 0.85rem;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+    }
+
+    .cycle-info span { color: var(--text); font-weight: 600; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 12px 28px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn:active { transform: scale(0.95); }
+
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      min-width: 120px;
+    }
+
+    .btn.primary:hover { background: #79b8ff; }
+    .btn:not(.primary):hover { background: var(--border); }
+
+    /* Tips */
+    .tip {
+      font-size: 0.78rem;
+      color: var(--muted);
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.6;
+    }
+
+    /* SVG progress ring overlay */
+    .svg-ring {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      pointer-events: none;
+    }
+
+    .svg-ring circle {
+      fill: none;
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+
+    .svg-ring .track { stroke: var(--border); }
+    .svg-ring .progress-arc {
+      stroke: var(--accent);
+      transition: stroke-dashoffset 1s linear, stroke 0.4s;
+    }
+  </style>
+</head>
+<body class="idle">
+
+  <h1>呼吸節拍器</h1>
+
+  <div class="mode-tabs">
+    <button class="mode-tab active" data-mode="478">4-7-8 呼吸法</button>
+    <button class="mode-tab" data-mode="box">Box Breathing<br>4-4-4-4</button>
+  </div>
+
+  <div class="phase-strip" id="phaseStrip"></div>
+
+  <div class="arena">
+    <div class="ring-bg"></div>
+    <svg class="svg-ring" viewBox="0 0 100 100">
+      <circle class="track" cx="50" cy="50" r="47"/>
+      <circle class="progress-arc" id="progressArc" cx="50" cy="50" r="47"/>
+    </svg>
+    <div class="breath-circle">
+      <div class="phase-label" id="phaseLabel">準備</div>
+      <div class="phase-countdown" id="countdown">—</div>
+    </div>
+  </div>
+
+  <div class="cycle-info">已完成循環：<span id="cycleCount">0</span></div>
+
+  <div class="controls">
+    <button class="btn primary" id="startBtn">開始</button>
+    <button class="btn" id="resetBtn">重置</button>
+  </div>
+
+  <p class="tip" id="tipText"></p>
+
+  <script>
+    // ─── Config ────────────────────────────────────────────────────────────────
+    const MODES = {
+      '478': {
+        phases: [
+          { key: 'inhale',  label: '吸氣', secs: 4 },
+          { key: 'hold',    label: '屏氣', secs: 7 },
+          { key: 'exhale',  label: '呼氣', secs: 8 },
+        ],
+        tip: '4-7-8 呼吸法有助於放鬆神經系統，減輕焦慮與助眠。',
+        arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' },
+      },
+      'box': {
+        phases: [
+          { key: 'inhale',  label: '吸氣', secs: 4 },
+          { key: 'hold',    label: '屏氣', secs: 4 },
+          { key: 'exhale',  label: '呼氣', secs: 4 },
+          { key: 'hold2',   label: '靜止', secs: 4 },
+        ],
+        tip: 'Box Breathing 是軍警常用的專注與冷靜技術，每邊各 4 秒。',
+        arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950', hold2:'#f0883e' },
+      },
+    };
+
+    // ─── State ─────────────────────────────────────────────────────────────────
+    let currentMode = '478';
+    let running = false;
+    let phaseIdx = 0;
+    let secondsLeft = 0;
+    let cycleCount = 0;
+    let ticker = null;
+
+    // ─── DOM refs ──────────────────────────────────────────────────────────────
+    const body        = document.body;
+    const startBtn    = document.getElementById('startBtn');
+    const resetBtn    = document.getElementById('resetBtn');
+    const phaseLabel  = document.getElementById('phaseLabel');
+    const countdown   = document.getElementById('countdown');
+    const cycleEl     = document.getElementById('cycleCount');
+    const phaseStrip  = document.getElementById('phaseStrip');
+    const tipText     = document.getElementById('tipText');
+    const progressArc = document.getElementById('progressArc');
+    const modeTabs    = document.querySelectorAll('.mode-tab');
+
+    // ─── SVG ring helper ───────────────────────────────────────────────────────
+    const CIRCUMFERENCE = 2 * Math.PI * 47; // r=47
+    progressArc.style.strokeDasharray = CIRCUMFERENCE;
+    progressArc.style.strokeDashoffset = CIRCUMFERENCE;
+
+    function setArcProgress(fraction, color) {
+      progressArc.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
+      progressArc.style.stroke = color;
+    }
+
+    // ─── UI builders ──────────────────────────────────────────────────────────
+    function buildPhaseStrip(mode) {
+      const { phases } = MODES[mode];
+      phaseStrip.innerHTML = phases
+        .map(p => `<div class="phase-chip">${p.label} ${p.secs}s</div>`)
+        .join('');
+      tipText.textContent = MODES[mode].tip;
+    }
+
+    function setBodyPhase(key) {
+      body.classList.remove('idle','inhale','hold','exhale','hold2');
+      body.classList.add(key);
+    }
+
+    function updateDisplay(phase, secs, totalSecs) {
+      phaseLabel.textContent = phase.label;
+      countdown.textContent  = secs;
+      const fraction = 1 - (secs / totalSecs);
+      setArcProgress(fraction, MODES[currentMode].arcColor[phase.key]);
+      setBodyPhase(phase.key);
+    }
+
+    // ─── Vibration ─────────────────────────────────────────────────────────────
+    function vibrate(pattern) {
+      if ('vibrate' in navigator) navigator.vibrate(pattern);
+    }
+
+    // ─── Core tick ────────────────────────────────────────────────────────────
+    function startPhase(idx) {
+      phaseIdx = idx;
+      const phases = MODES[currentMode].phases;
+      const phase  = phases[idx];
+      secondsLeft  = phase.secs;
+
+      vibrate([60]);
+      updateDisplay(phase, secondsLeft, phase.secs);
+
+      // arc starts at 0 for the new phase — let CSS transition handle it
+      progressArc.style.transition = 'none';
+      setArcProgress(0, MODES[currentMode].arcColor[phase.key]);
+      requestAnimationFrame(() => {
+        progressArc.style.transition = `stroke-dashoffset ${phase.secs}s linear, stroke 0.4s`;
+        setArcProgress(1, MODES[currentMode].arcColor[phase.key]);
+      });
+    }
+
+    function tick() {
+      secondsLeft--;
+      const phase = MODES[currentMode].phases[phaseIdx];
+      countdown.textContent = secondsLeft;
+
+      if (secondsLeft <= 0) {
+        const phases = MODES[currentMode].phases;
+        const next = (phaseIdx + 1) % phases.length;
+        if (next === 0) {
+          cycleCount++;
+          cycleEl.textContent = cycleCount;
+          vibrate([80, 60, 80]);
+        }
+        startPhase(next);
+      }
+    }
+
+    // ─── Controls ─────────────────────────────────────────────────────────────
+    function startResume() {
+      if (running) return;
+      running = true;
+      startBtn.textContent = '暫停';
+      startBtn.classList.add('primary');
+
+      if (secondsLeft === 0) startPhase(0);
+      ticker = setInterval(tick, 1000);
+    }
+
+    function pause() {
+      if (!running) return;
+      running = false;
+      clearInterval(ticker);
+      startBtn.textContent = '繼續';
+      // freeze arc
+      const phase = MODES[currentMode].phases[phaseIdx];
+      const fraction = 1 - (secondsLeft / phase.secs);
+      progressArc.style.transition = 'none';
+      setArcProgress(fraction, MODES[currentMode].arcColor[phase.key]);
+    }
+
+    function reset() {
+      pause();
+      running = false;
+      phaseIdx = 0;
+      secondsLeft = 0;
+      cycleCount = 0;
+      cycleEl.textContent = 0;
+      startBtn.textContent = '開始';
+      phaseLabel.textContent = '準備';
+      countdown.textContent  = '—';
+      setBodyPhase('idle');
+      progressArc.style.transition = 'none';
+      setArcProgress(0, '#58a6ff');
+    }
+
+    startBtn.addEventListener('click', () => {
+      if (running) pause(); else startResume();
+    });
+
+    resetBtn.addEventListener('click', reset);
+
+    // ─── Mode switching ───────────────────────────────────────────────────────
+    modeTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        if (tab.dataset.mode === currentMode) return;
+        reset();
+        currentMode = tab.dataset.mode;
+        modeTabs.forEach(t => t.classList.toggle('active', t === tab));
+        buildPhaseStrip(currentMode);
+      });
+    });
+
+    // ─── Init ─────────────────────────────────────────────────────────────────
+    buildPhaseStrip(currentMode);
+
+    // ─── Service Worker ───────────────────────────────────────────────────────
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>
