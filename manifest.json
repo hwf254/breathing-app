@@ -2,7 +2,7 @@
   "name": "呼吸節拍器",
   "short_name": "呼吸",
   "description": "4-7-8 與 Box Breathing 冥想輔助 App",
-  "start_url": "/",
+  "start_url": "/breathing-app/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0d1117",
