@@ -296,7 +296,7 @@
     .svg-ring .track { stroke: var(--border); }
     .svg-ring .progress-arc {
       stroke: var(--accent);
-      transition: stroke-dashoffset 1s linear, stroke 0.4s;
+      transition: stroke 0.4s;
     }
   </style>
 </head>
@@ -437,21 +437,14 @@
       secondsLeft  = phase.secs;
 
       vibrate([60]);
+      progressArc.style.transition = 'stroke 0.4s';
       updateDisplay(phase, secondsLeft, phase.secs);
-
-      // arc starts at 0 for the new phase — let CSS transition handle it
-      progressArc.style.transition = 'none';
-      setArcProgress(0, MODES[currentMode].arcColor[phase.key]);
-      requestAnimationFrame(() => {
-        progressArc.style.transition = `stroke-dashoffset ${phase.secs}s linear, stroke 0.4s`;
-        setArcProgress(1, MODES[currentMode].arcColor[phase.key]);
-      });
     }
 
     function tick() {
       secondsLeft--;
       const phase = MODES[currentMode].phases[phaseIdx];
-      countdown.textContent = secondsLeft;
+      updateDisplay(phase, secondsLeft, phase.secs);
 
       if (secondsLeft <= 0) {
         const phases = MODES[currentMode].phases;
