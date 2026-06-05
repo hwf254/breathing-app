@@ -233,6 +233,41 @@
     .btn.primary:hover { background: #79b8ff; }
     .btn:not(.primary):hover { background: var(--border); }
 
+    /* Vibration toggle */
+    .vib-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .vib-toggle input { display: none; }
+    .vib-pill {
+      width: 40px;
+      height: 22px;
+      border-radius: 11px;
+      background: var(--border);
+      position: relative;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .vib-pill::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #fff;
+      top: 3px;
+      left: 3px;
+      transition: transform 0.2s;
+    }
+    .vib-toggle input:checked + .vib-pill { background: var(--accent); }
+    .vib-toggle input:checked + .vib-pill::after { transform: translateX(18px); }
+
     /* Tips */
     .tip {
       font-size: 0.78rem;
@@ -294,6 +329,12 @@
     <button class="btn primary" id="startBtn">開始</button>
     <button class="btn" id="resetBtn">重置</button>
   </div>
+
+  <label class="vib-toggle">
+    <input type="checkbox" id="vibToggle" />
+    <span class="vib-pill"></span>
+    <span id="vibLabel">震動：關</span>
+  </label>
 
   <p class="tip" id="tipText"></p>
 
@@ -374,8 +415,18 @@
     }
 
     // ─── Vibration ─────────────────────────────────────────────────────────────
+    let vibEnabled = false;
+    const vibToggle = document.getElementById('vibToggle');
+    const vibLabel  = document.getElementById('vibLabel');
+
+    vibToggle.addEventListener('change', () => {
+      vibEnabled = vibToggle.checked;
+      vibLabel.textContent = vibEnabled ? '震動：開' : '震動：關';
+      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate([60, 40, 60]);
+    });
+
     function vibrate(pattern) {
-      if ('vibrate' in navigator) navigator.vibrate(pattern);
+      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate(pattern);
     }
 
     // ─── Core tick ────────────────────────────────────────────────────────────
