@@ -287,6 +287,76 @@
     .tog-label input:checked + .tog-pill { background: var(--accent); }
     .tog-label input:checked + .tog-pill::after { transform: translateX(18px); }
 
+    /* Entrainment panel */
+    .entrain-panel {
+      width: 100%;
+      max-width: 340px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .entrain-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+    }
+    .entrain-header span {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .entrain-body {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      padding: 0 16px 16px;
+      border-top: 1px solid var(--border);
+    }
+    .entrain-body.open { display: flex; }
+    .entrain-mode-tabs {
+      display: flex;
+      gap: 6px;
+    }
+    .entrain-tab {
+      flex: 1;
+      padding: 8px 6px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.78rem;
+      cursor: pointer;
+      text-align: center;
+      line-height: 1.4;
+      transition: background 0.15s, color 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .entrain-tab.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .entrain-hint {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .entrain-hint b { color: var(--accent); }
+    .vol-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+    .vol-row input[type=range] {
+      flex: 1;
+      accent-color: var(--accent);
+      height: 4px;
+      cursor: pointer;
+    }
+
     /* Tips */
     .tip {
       font-size: 0.78rem;
@@ -407,6 +477,32 @@
       <span class="tog-pill"></span>
       <span>聲音</span>
     </label>
+  </div>
+
+  <!-- 調頻音面板 -->
+  <div class="entrain-panel">
+    <div class="entrain-header">
+      <span>🎵 調頻音（7.83Hz Schumann）</span>
+      <label class="tog-label" style="margin:0">
+        <input type="checkbox" id="entrainToggle" />
+        <span class="tog-pill"></span>
+      </label>
+    </div>
+    <div class="entrain-body" id="entrainBody">
+      <div class="entrain-mode-tabs">
+        <button class="entrain-tab active" id="tabBinaural">雙耳節拍<br><small>需耳機</small></button>
+        <button class="entrain-tab" id="tabIso">等響節拍<br><small>免耳機</small></button>
+      </div>
+      <p class="entrain-hint" id="entrainHint">
+        <b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。<br>
+        建議佩戴耳機以獲得最佳效果。
+      </p>
+      <div class="vol-row">
+        <span>音量</span>
+        <input type="range" id="entrainVol" min="0" max="100" value="30" />
+        <span id="entrainVolVal">30%</span>
+      </div>
+    </div>
   </div>
 
   <p class="tip" id="tipText"></p>
@@ -553,6 +649,7 @@
         `已完成 ${cycleCount} 個循環`;
       completeScreen.classList.add('show');
       releaseWakeLock();
+      stopEntrainment();
       doVibrate([100, 80, 100, 80, 200]);
     }
 
@@ -613,6 +710,136 @@
     soundToggle.addEventListener('change', () => {
       soundEnabled = soundToggle.checked;
       if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
+    });
+
+    // ─── Entrainment ───────────────────────────────────────────────────────────
+    let entrainEnabled = false;
+    let entrainMode = 'binaural'; // 'binaural' | 'iso'
+    let entrainNodes = null;
+
+    const entrainToggle = document.getElementById('entrainToggle');
+    const entrainBody   = document.getElementById('entrainBody');
+    const tabBinaural   = document.getElementById('tabBinaural');
+    const tabIso        = document.getElementById('tabIso');
+    const entrainHint   = document.getElementById('entrainHint');
+    const entrainVol    = document.getElementById('entrainVol');
+    const entrainVolVal = document.getElementById('entrainVolVal');
+
+    const ENTRAIN_HINTS = {
+      binaural: '<b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。<br>建議佩戴耳機以獲得最佳效果。',
+      iso:      '<b>等響節拍</b>：200Hz 基礎音以 7.83Hz 速率脈衝調幅，免耳機也有效。',
+    };
+
+    function startEntrainment() {
+      if (!entrainEnabled) return;
+      stopEntrainment();
+      try {
+        const ctx = getAudioCtx();
+        const vol = entrainVol.value / 100 * 0.4; // max 0.4 gain
+        const masterGain = ctx.createGain();
+        masterGain.gain.setValueAtTime(vol, ctx.currentTime);
+        masterGain.connect(ctx.destination);
+
+        if (entrainMode === 'binaural') {
+          // 左耳 200Hz，右耳 207.83Hz
+          const merger = ctx.createChannelMerger(2);
+          merger.connect(masterGain);
+
+          const oscL = ctx.createOscillator();
+          const gainL = ctx.createGain();
+          oscL.frequency.value = 200;
+          oscL.type = 'sine';
+          gainL.gain.value = 1;
+          oscL.connect(gainL);
+          gainL.connect(merger, 0, 0);
+          oscL.start();
+
+          const oscR = ctx.createOscillator();
+          const gainR = ctx.createGain();
+          oscR.frequency.value = 207.83;
+          oscR.type = 'sine';
+          gainR.gain.value = 1;
+          oscR.connect(gainR);
+          gainR.connect(merger, 0, 1);
+          oscR.start();
+
+          entrainNodes = { type: 'binaural', oscL, oscR, masterGain };
+        } else {
+          // 等響節拍：200Hz 載波 × 7.83Hz LFO 調幅
+          const osc = ctx.createOscillator();
+          osc.frequency.value = 200;
+          osc.type = 'sine';
+
+          const lfo = ctx.createOscillator();
+          lfo.frequency.value = 7.83;
+          lfo.type = 'sine';
+
+          const lfoGain = ctx.createGain();
+          lfoGain.gain.value = 0.5;
+          lfo.connect(lfoGain);
+
+          const ampGain = ctx.createGain();
+          ampGain.gain.value = 0.5;
+          lfoGain.connect(ampGain.gain);
+
+          osc.connect(ampGain);
+          ampGain.connect(masterGain);
+
+          osc.start();
+          lfo.start();
+
+          entrainNodes = { type: 'iso', osc, lfo, masterGain };
+        }
+      } catch(e) {}
+    }
+
+    function stopEntrainment() {
+      if (!entrainNodes) return;
+      try {
+        if (entrainNodes.type === 'binaural') {
+          entrainNodes.oscL.stop();
+          entrainNodes.oscR.stop();
+        } else {
+          entrainNodes.osc.stop();
+          entrainNodes.lfo.stop();
+        }
+        entrainNodes.masterGain.disconnect();
+      } catch(e) {}
+      entrainNodes = null;
+    }
+
+    function updateEntrainVolume() {
+      if (!entrainNodes) return;
+      const vol = entrainVol.value / 100 * 0.4;
+      try {
+        entrainNodes.masterGain.gain.setValueAtTime(vol, getAudioCtx().currentTime);
+      } catch(e) {}
+    }
+
+    entrainToggle.addEventListener('change', () => {
+      entrainEnabled = entrainToggle.checked;
+      entrainBody.classList.toggle('open', entrainEnabled);
+      if (entrainEnabled) {
+        getAudioCtx();
+        if (running) startEntrainment();
+      } else {
+        stopEntrainment();
+      }
+    });
+
+    [tabBinaural, tabIso].forEach(tab => {
+      tab.addEventListener('click', () => {
+        entrainMode = tab === tabBinaural ? 'binaural' : 'iso';
+        tabBinaural.classList.toggle('active', entrainMode === 'binaural');
+        tabIso.classList.toggle('active', entrainMode === 'iso');
+        entrainHint.innerHTML = ENTRAIN_HINTS[entrainMode];
+        if (running && entrainEnabled) startEntrainment();
+      });
+    });
+
+    entrainVol.addEventListener('input', () => {
+      entrainVolVal.textContent = entrainVol.value + '%';
+      updateEntrainVolume();
     });
 
     // ─── WakeLock ──────────────────────────────────────────────────────────────
@@ -676,6 +903,7 @@
       startBtn.textContent = '暫停';
       startBtn.classList.add('primary');
       acquireWakeLock();
+      startEntrainment();
 
       if (secondsLeft === 0) startPhase(0);
       ticker = setInterval(tick, 1000);
@@ -687,6 +915,7 @@
       clearInterval(ticker);
       startBtn.textContent = '繼續';
       releaseWakeLock();
+      stopEntrainment();
       const phase = MODES[currentMode].phases[phaseIdx];
       const fraction = 1 - (secondsLeft / phase.secs);
       progressArc.style.transition = 'none';
