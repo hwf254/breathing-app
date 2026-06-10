@@ -336,6 +336,12 @@
     <button class="btn" id="resetBtn">重置</button>
   </div>
 
+  <div class="controls">
+    <button class="btn" id="testVibBtn">測試震動</button>
+  </div>
+
+  <p style="font-size:0.8rem;color:var(--muted)">vibrate 支援：<span id="vibSupport" style="color:var(--text);font-weight:600"></span></p>
+
   <div class="toggles">
     <label class="tog-label">
       <input type="checkbox" id="vibToggle" />
@@ -552,11 +558,17 @@
       setArcProgress(0, '#58a6ff');
     }
 
+    // 顯示 vibrate 支援狀態
+    document.getElementById('vibSupport').textContent = ('vibrate' in navigator) ? 'true' : 'false';
+
     startBtn.addEventListener('click', () => {
-      // 在用戶直接 click 事件內解鎖震動與音頻
-      if ('vibrate' in navigator) navigator.vibrate(1);
+      navigator.vibrate(200);
       if (soundEnabled) getAudioCtx();
       if (running) pause(); else startResume();
+    });
+
+    document.getElementById('testVibBtn').addEventListener('click', () => {
+      navigator.vibrate([200, 100, 200]);
     });
 
     resetBtn.addEventListener('click', reset);
