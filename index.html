@@ -42,7 +42,7 @@
 
     body {
       padding: 24px 16px 32px;
-      gap: 24px;
+      gap: 20px;
     }
 
     h1 {
@@ -51,6 +51,35 @@
       letter-spacing: 0.08em;
       color: var(--muted);
       text-transform: uppercase;
+    }
+
+    /* Scenario selector */
+    .scenario-select {
+      width: 100%;
+      max-width: 340px;
+      padding: 10px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 0.95rem;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 14px center;
+      padding-right: 36px;
+    }
+    .scenario-select:focus { outline: none; border-color: var(--accent); }
+
+    /* Scenario hint */
+    .scenario-hint {
+      font-size: 0.8rem;
+      color: var(--accent);
+      text-align: center;
+      max-width: 300px;
+      line-height: 1.6;
+      min-height: 1.2em;
     }
 
     /* Mode selector */
@@ -123,16 +152,6 @@
       border: 2px solid var(--border);
     }
 
-    .ring-progress {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: var(--accent);
-      transition: border-top-color 0.4s;
-      /* rotated by JS */
-    }
-
     .breath-circle {
       width: 52%;
       height: 52%;
@@ -183,9 +202,7 @@
       background: radial-gradient(circle at 38% 35%, rgba(240,136,62,0.35), rgba(240,136,62,0.08) 65%);
       box-shadow: 0 0 40px rgba(240,136,62,0.3), 0 0 0 1px rgba(240,136,62,0.2);
     }
-    body.idle .breath-circle {
-      transform: scale(1.0);
-    }
+    body.idle .breath-circle { transform: scale(1.0); }
 
     /* Phase label colors */
     body.inhale .phase-label  { color: var(--inhale); }
@@ -199,7 +216,6 @@
       color: var(--muted);
       letter-spacing: 0.03em;
     }
-
     .cycle-info span { color: var(--text); font-weight: 600; }
 
     /* Controls */
@@ -220,16 +236,13 @@
       transition: background 0.15s, border-color 0.15s, transform 0.1s;
       -webkit-tap-highlight-color: transparent;
     }
-
     .btn:active { transform: scale(0.95); }
-
     .btn.primary {
       background: var(--accent);
       border-color: var(--accent);
       color: #fff;
       min-width: 120px;
     }
-
     .btn.primary:hover { background: #79b8ff; }
     .btn:not(.primary):hover { background: var(--border); }
 
@@ -292,23 +305,64 @@
       transform: rotate(-90deg);
       pointer-events: none;
     }
-
     .svg-ring circle {
       fill: none;
       stroke-width: 3;
       stroke-linecap: round;
     }
-
     .svg-ring .track { stroke: var(--border); }
     .svg-ring .progress-arc {
       stroke: var(--accent);
       transition: stroke 0.4s;
+    }
+
+    /* Complete overlay */
+    .complete-screen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      padding: 32px;
+      text-align: center;
+      z-index: 10;
+    }
+    .complete-screen.show { display: flex; }
+    .complete-icon { font-size: 4rem; }
+    .complete-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .complete-msg {
+      font-size: 0.95rem;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.7;
+    }
+    .complete-cycles {
+      font-size: 0.85rem;
+      color: var(--accent);
     }
   </style>
 </head>
 <body class="idle">
 
   <h1>呼吸節拍器</h1>
+
+  <select class="scenario-select" id="scenarioSelect">
+    <option value="free">自由練習</option>
+    <option value="sleep">😴 睡前放鬆</option>
+    <option value="anxiety">😰 緊張焦慮</option>
+    <option value="meditate">🧘 冥想前調頻</option>
+    <option value="focus">🎯 專注工作前</option>
+    <option value="morning">🌅 早晨啟動</option>
+  </select>
+
+  <p class="scenario-hint" id="scenarioHint"></p>
 
   <div class="mode-tabs">
     <button class="mode-tab active" data-mode="478">4-7-8 呼吸法</button>
@@ -329,7 +383,7 @@
     </div>
   </div>
 
-  <div class="cycle-info">已完成循環：<span id="cycleCount">0</span></div>
+  <div class="cycle-info">已完成循環：<span id="cycleCount">0</span><span id="cycleGoal"></span></div>
 
   <div class="controls">
     <button class="btn primary" id="startBtn">開始</button>
@@ -357,7 +411,33 @@
 
   <p class="tip" id="tipText"></p>
 
+  <!-- 完成畫面 -->
+  <div class="complete-screen" id="completeScreen">
+    <div class="complete-icon" id="completeIcon">✨</div>
+    <div class="complete-title" id="completeTitle">練習完成</div>
+    <div class="complete-msg" id="completeMsg"></div>
+    <div class="complete-cycles" id="completeCycles"></div>
+    <button class="btn primary" id="restartBtn">再來一次</button>
+    <button class="btn" id="completeResetBtn">返回主畫面</button>
+  </div>
+
   <script>
+    // ─── Scenarios ─────────────────────────────────────────────────────────────
+    const SCENARIOS = {
+      free:     { mode: null,  cycles: 0,  hint: '',
+                  icon: '✨', title: '自由練習完成', msg: '很好，每一次呼吸都是對自己的關照。' },
+      sleep:    { mode: '478', cycles: 3,  hint: '活化副交感神經，幫助身體進入休息模式',
+                  icon: '😴', title: '睡前放鬆完成', msg: '身體已準備好進入休息。\n放下手機，讓自己慢慢入睡。' },
+      anxiety:  { mode: '478', cycles: 5,  hint: '延長呼氣可快速平緩過度活躍的神經系統',
+                  icon: '🌿', title: '緊張已緩解', msg: '你已平息了神經系統的風暴。\n此刻的你比剛才更穩定了。' },
+      meditate: { mode: 'box', cycles: 5,  hint: '讓心智進入穩定中性狀態，適合冥想前使用',
+                  icon: '🧘', title: '調頻完成', msg: '心智已準備好進入冥想。\n保持這份靜定，繼續深入。' },
+      focus:    { mode: 'box', cycles: 3,  hint: '平衡自律神經，提升注意力與清醒度',
+                  icon: '🎯', title: '專注已就緒', msg: '神經系統已平衡，注意力清晰。\n現在是投入工作的好時機。' },
+      morning:  { mode: 'box', cycles: 4,  hint: '喚醒身心，為今天設定穩定的基調',
+                  icon: '🌅', title: '早晨啟動完成', msg: '身心已醒來，今天有個好的開始。\n帶著這份穩定迎接新的一天。' },
+    };
+
     // ─── Config ────────────────────────────────────────────────────────────────
     const MODES = {
       '478': {
@@ -383,6 +463,7 @@
 
     // ─── State ─────────────────────────────────────────────────────────────────
     let currentMode = '478';
+    let currentScenario = 'free';
     let running = false;
     let phaseIdx = 0;
     let secondsLeft = 0;
@@ -390,19 +471,23 @@
     let ticker = null;
 
     // ─── DOM refs ──────────────────────────────────────────────────────────────
-    const body        = document.body;
-    const startBtn    = document.getElementById('startBtn');
-    const resetBtn    = document.getElementById('resetBtn');
-    const phaseLabel  = document.getElementById('phaseLabel');
-    const countdown   = document.getElementById('countdown');
-    const cycleEl     = document.getElementById('cycleCount');
-    const phaseStrip  = document.getElementById('phaseStrip');
-    const tipText     = document.getElementById('tipText');
-    const progressArc = document.getElementById('progressArc');
-    const modeTabs    = document.querySelectorAll('.mode-tab');
+    const body           = document.body;
+    const startBtn       = document.getElementById('startBtn');
+    const resetBtn       = document.getElementById('resetBtn');
+    const phaseLabel     = document.getElementById('phaseLabel');
+    const countdown      = document.getElementById('countdown');
+    const cycleEl        = document.getElementById('cycleCount');
+    const cycleGoalEl    = document.getElementById('cycleGoal');
+    const phaseStrip     = document.getElementById('phaseStrip');
+    const tipText        = document.getElementById('tipText');
+    const progressArc    = document.getElementById('progressArc');
+    const modeTabs       = document.querySelectorAll('.mode-tab');
+    const scenarioSelect = document.getElementById('scenarioSelect');
+    const scenarioHint   = document.getElementById('scenarioHint');
+    const completeScreen = document.getElementById('completeScreen');
 
     // ─── SVG ring helper ───────────────────────────────────────────────────────
-    const CIRCUMFERENCE = 2 * Math.PI * 47; // r=47
+    const CIRCUMFERENCE = 2 * Math.PI * 47;
     progressArc.style.strokeDasharray = CIRCUMFERENCE;
     progressArc.style.strokeDashoffset = CIRCUMFERENCE;
 
@@ -433,17 +518,63 @@
       setBodyPhase(phase.key);
     }
 
+    function syncModeTab(mode) {
+      modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    }
+
+    // ─── Scenario switching ───────────────────────────────────────────────────
+    function applyScenario(key) {
+      currentScenario = key;
+      const sc = SCENARIOS[key];
+      scenarioHint.textContent = sc.hint;
+
+      if (sc.mode && sc.mode !== currentMode) {
+        currentMode = sc.mode;
+        syncModeTab(currentMode);
+        buildPhaseStrip(currentMode);
+      }
+
+      const goal = sc.cycles;
+      cycleGoalEl.textContent = goal > 0 ? ` / ${goal}` : '';
+    }
+
+    scenarioSelect.addEventListener('change', () => {
+      reset();
+      applyScenario(scenarioSelect.value);
+    });
+
+    // ─── Complete screen ──────────────────────────────────────────────────────
+    function showComplete() {
+      const sc = SCENARIOS[currentScenario];
+      document.getElementById('completeIcon').textContent  = sc.icon;
+      document.getElementById('completeTitle').textContent = sc.title;
+      document.getElementById('completeMsg').textContent   = sc.msg;
+      document.getElementById('completeCycles').textContent =
+        `已完成 ${cycleCount} 個循環`;
+      completeScreen.classList.add('show');
+      releaseWakeLock();
+      doVibrate([100, 80, 100, 80, 200]);
+    }
+
+    document.getElementById('restartBtn').addEventListener('click', () => {
+      completeScreen.classList.remove('show');
+      reset();
+    });
+
+    document.getElementById('completeResetBtn').addEventListener('click', () => {
+      completeScreen.classList.remove('show');
+      scenarioSelect.value = 'free';
+      applyScenario('free');
+      reset();
+    });
+
     // ─── Vibration ─────────────────────────────────────────────────────────────
     let vibEnabled = false;
-    let audioUnlocked = false;
-    const vibToggle  = document.getElementById('vibToggle');
-    const vibLabel   = document.getElementById('vibLabel');
+    const vibToggle = document.getElementById('vibToggle');
 
     vibToggle.addEventListener('change', () => {
       vibEnabled = vibToggle.checked;
-      if (vibEnabled && 'vibrate' in navigator) {
-        navigator.vibrate([100, 80, 100]);
-      }
+      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate([100, 80, 100]);
     });
 
     function doVibrate(pattern) {
@@ -454,8 +585,6 @@
     let audioCtx = null;
     let soundEnabled = false;
     const soundToggle = document.getElementById('soundToggle');
-
-    // 各階段音調 (Hz)
     const PHASE_TONE = { inhale: 528, hold: 396, exhale: 285, hold2: 396 };
 
     function getAudioCtx() {
@@ -483,12 +612,23 @@
 
     soundToggle.addEventListener('change', () => {
       soundEnabled = soundToggle.checked;
-      if (soundEnabled) {
-        // 解鎖 AudioContext（需在 click 同步回調內）
-        getAudioCtx();
-        playTone(528, 0.2);
-      }
+      if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
     });
+
+    // ─── WakeLock ──────────────────────────────────────────────────────────────
+    let wakeLock = null;
+
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } catch(e) {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) { wakeLock.release(); wakeLock = null; }
+    }
 
     // ─── Core tick ────────────────────────────────────────────────────────────
     function startPhase(idx) {
@@ -515,24 +655,18 @@
           cycleCount++;
           cycleEl.textContent = cycleCount;
           doVibrate([100, 80, 100, 80, 100]);
+
+          const goal = SCENARIOS[currentScenario].cycles;
+          if (goal > 0 && cycleCount >= goal) {
+            clearInterval(ticker);
+            running = false;
+            startBtn.textContent = '開始';
+            showComplete();
+            return;
+          }
         }
         startPhase(next);
       }
-    }
-
-    // ─── WakeLock ──────────────────────────────────────────────────────────────
-    let wakeLock = null;
-
-    async function acquireWakeLock() {
-      if (!('wakeLock' in navigator)) return;
-      try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', () => { wakeLock = null; });
-      } catch(e) {}
-    }
-
-    function releaseWakeLock() {
-      if (wakeLock) { wakeLock.release(); wakeLock = null; }
     }
 
     // ─── Controls ─────────────────────────────────────────────────────────────
@@ -553,7 +687,6 @@
       clearInterval(ticker);
       startBtn.textContent = '繼續';
       releaseWakeLock();
-      // freeze arc
       const phase = MODES[currentMode].phases[phaseIdx];
       const fraction = 1 - (secondsLeft / phase.secs);
       progressArc.style.transition = 'none';
@@ -561,7 +694,7 @@
     }
 
     function reset() {
-      pause();
+      if (running) pause();
       running = false;
       phaseIdx = 0;
       secondsLeft = 0;
@@ -596,13 +729,19 @@
         if (tab.dataset.mode === currentMode) return;
         reset();
         currentMode = tab.dataset.mode;
-        modeTabs.forEach(t => t.classList.toggle('active', t === tab));
+        syncModeTab(currentMode);
         buildPhaseStrip(currentMode);
+        // 手動切換模式時清除情境限制
+        if (SCENARIOS[currentScenario].mode) {
+          scenarioSelect.value = 'free';
+          applyScenario('free');
+        }
       });
     });
 
     // ─── Init ─────────────────────────────────────────────────────────────────
     buildPhaseStrip(currentMode);
+    applyScenario('free');
 
     // ─── Service Worker ───────────────────────────────────────────────────────
     if ('serviceWorker' in navigator) {
