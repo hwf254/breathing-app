@@ -520,12 +520,28 @@
       }
     }
 
+    // ─── WakeLock ──────────────────────────────────────────────────────────────
+    let wakeLock = null;
+
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener('release', () => { wakeLock = null; });
+      } catch(e) {}
+    }
+
+    function releaseWakeLock() {
+      if (wakeLock) { wakeLock.release(); wakeLock = null; }
+    }
+
     // ─── Controls ─────────────────────────────────────────────────────────────
     function startResume() {
       if (running) return;
       running = true;
       startBtn.textContent = '暫停';
       startBtn.classList.add('primary');
+      acquireWakeLock();
 
       if (secondsLeft === 0) startPhase(0);
       ticker = setInterval(tick, 1000);
@@ -536,6 +552,7 @@
       running = false;
       clearInterval(ticker);
       startBtn.textContent = '繼續';
+      releaseWakeLock();
       // freeze arc
       const phase = MODES[currentMode].phases[phaseIdx];
       const fraction = 1 - (secondsLeft / phase.secs);
