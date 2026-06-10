@@ -233,8 +233,14 @@
     .btn.primary:hover { background: #79b8ff; }
     .btn:not(.primary):hover { background: var(--border); }
 
-    /* Vibration toggle */
-    .vib-toggle {
+    /* Toggles row */
+    .toggles {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .tog-label {
       display: flex;
       align-items: center;
       gap: 8px;
@@ -244,8 +250,8 @@
       -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
-    .vib-toggle input { display: none; }
-    .vib-pill {
+    .tog-label input { display: none; }
+    .tog-pill {
       width: 40px;
       height: 22px;
       border-radius: 11px;
@@ -254,7 +260,7 @@
       transition: background 0.2s;
       flex-shrink: 0;
     }
-    .vib-pill::after {
+    .tog-pill::after {
       content: '';
       position: absolute;
       width: 16px;
@@ -265,8 +271,8 @@
       left: 3px;
       transition: transform 0.2s;
     }
-    .vib-toggle input:checked + .vib-pill { background: var(--accent); }
-    .vib-toggle input:checked + .vib-pill::after { transform: translateX(18px); }
+    .tog-label input:checked + .tog-pill { background: var(--accent); }
+    .tog-label input:checked + .tog-pill::after { transform: translateX(18px); }
 
     /* Tips */
     .tip {
@@ -330,11 +336,18 @@
     <button class="btn" id="resetBtn">重置</button>
   </div>
 
-  <label class="vib-toggle">
-    <input type="checkbox" id="vibToggle" />
-    <span class="vib-pill"></span>
-    <span id="vibLabel">震動：關</span>
-  </label>
+  <div class="toggles">
+    <label class="tog-label">
+      <input type="checkbox" id="vibToggle" />
+      <span class="tog-pill"></span>
+      <span id="vibLabel">震動</span>
+    </label>
+    <label class="tog-label">
+      <input type="checkbox" id="soundToggle" />
+      <span class="tog-pill"></span>
+      <span>聲音</span>
+    </label>
+  </div>
 
   <p class="tip" id="tipText"></p>
 
@@ -416,18 +429,60 @@
 
     // ─── Vibration ─────────────────────────────────────────────────────────────
     let vibEnabled = false;
-    const vibToggle = document.getElementById('vibToggle');
-    const vibLabel  = document.getElementById('vibLabel');
+    let audioUnlocked = false;
+    const vibToggle  = document.getElementById('vibToggle');
+    const vibLabel   = document.getElementById('vibLabel');
 
     vibToggle.addEventListener('change', () => {
       vibEnabled = vibToggle.checked;
-      vibLabel.textContent = vibEnabled ? '震動：開' : '震動：關';
-      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate([60, 40, 60]);
+      if (vibEnabled && 'vibrate' in navigator) {
+        navigator.vibrate([100, 80, 100]);
+      }
     });
 
-    function vibrate(pattern) {
+    function doVibrate(pattern) {
       if (vibEnabled && 'vibrate' in navigator) navigator.vibrate(pattern);
     }
+
+    // ─── Web Audio ─────────────────────────────────────────────────────────────
+    let audioCtx = null;
+    let soundEnabled = false;
+    const soundToggle = document.getElementById('soundToggle');
+
+    // 各階段音調 (Hz)
+    const PHASE_TONE = { inhale: 528, hold: 396, exhale: 285, hold2: 396 };
+
+    function getAudioCtx() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function playTone(freq, duration = 0.15) {
+      if (!soundEnabled) return;
+      try {
+        const ctx = getAudioCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+      } catch(e) {}
+    }
+
+    soundToggle.addEventListener('change', () => {
+      soundEnabled = soundToggle.checked;
+      if (soundEnabled) {
+        // 解鎖 AudioContext（需在 click 同步回調內）
+        getAudioCtx();
+        playTone(528, 0.2);
+      }
+    });
 
     // ─── Core tick ────────────────────────────────────────────────────────────
     function startPhase(idx) {
@@ -436,7 +491,8 @@
       const phase  = phases[idx];
       secondsLeft  = phase.secs;
 
-      vibrate([60]);
+      doVibrate([100]);
+      playTone(PHASE_TONE[phase.key] || 440);
       progressArc.style.transition = 'stroke 0.4s';
       updateDisplay(phase, secondsLeft, phase.secs);
     }
@@ -452,7 +508,7 @@
         if (next === 0) {
           cycleCount++;
           cycleEl.textContent = cycleCount;
-          vibrate([80, 60, 80]);
+          doVibrate([100, 80, 100, 80, 100]);
         }
         startPhase(next);
       }
@@ -497,6 +553,9 @@
     }
 
     startBtn.addEventListener('click', () => {
+      // 在用戶直接 click 事件內解鎖震動與音頻
+      if ('vibrate' in navigator) navigator.vibrate(1);
+      if (soundEnabled) getAudioCtx();
       if (running) pause(); else startResume();
     });
 
