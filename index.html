@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#0d1117" />
-  <meta name="description" content="呼吸節拍器 — 4-7-8 與 Box Breathing 冥想輔助" />
+  <meta name="description" content="呼吸節拍器 — 4-7-8、Box、111 與冰人呼吸法" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="呼吸" />
@@ -15,408 +15,194 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-glow: rgba(88, 166, 255, 0.25);
-      --inhale: #58a6ff;
-      --hold: #a371f7;
-      --exhale: #3fb950;
-      --hold2: #f0883e;
+      --bg: #0d1117; --surface: #161b22; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e; --accent: #58a6ff;
+      --accent-glow: rgba(88,166,255,0.25);
+      --inhale: #58a6ff; --hold: #a371f7; --exhale: #3fb950; --hold2: #f0883e;
+      --danger: #f85149;
     }
 
     html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
+      height: 100%; background: var(--bg); color: var(--text);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      overflow-x: hidden;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: flex-start; overflow-x: hidden;
     }
+    body { padding: 20px 16px 40px; gap: 16px; }
 
-    body {
-      padding: 24px 16px 32px;
-      gap: 20px;
-    }
+    h1 { font-size: 1.2rem; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
 
-    h1 {
-      font-size: 1.25rem;
-      font-weight: 500;
-      letter-spacing: 0.08em;
-      color: var(--muted);
-      text-transform: uppercase;
-    }
-
-    /* Scenario selector */
+    /* Scenario select */
     .scenario-select {
-      width: 100%;
-      max-width: 340px;
-      padding: 10px 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-size: 0.95rem;
-      cursor: pointer;
+      width: 100%; max-width: 340px; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text); font-size: 0.95rem; cursor: pointer;
       appearance: none;
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      padding-right: 36px;
+      background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
     }
     .scenario-select:focus { outline: none; border-color: var(--accent); }
+    .scenario-hint { font-size: 0.8rem; color: var(--accent); text-align: center; max-width: 300px; line-height: 1.6; min-height: 1em; }
 
-    /* Scenario hint */
-    .scenario-hint {
-      font-size: 0.8rem;
-      color: var(--accent);
-      text-align: center;
-      max-width: 300px;
-      line-height: 1.6;
-      min-height: 1.2em;
-    }
-
-    /* Mode selector */
+    /* Mode tabs — 2×2 grid */
     .mode-tabs {
-      display: flex;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 4px;
-      gap: 4px;
-      width: 100%;
-      max-width: 340px;
+      display: flex; flex-wrap: wrap; gap: 4px; padding: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; width: 100%; max-width: 340px;
     }
-
     .mode-tab {
-      flex: 1;
-      padding: 10px 8px;
-      border: none;
-      border-radius: 8px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.85rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.2s, color 0.2s;
-      line-height: 1.3;
-      text-align: center;
+      flex: 1 0 calc(50% - 6px); padding: 9px 6px; border: none;
+      border-radius: 8px; background: transparent; color: var(--muted);
+      font-size: 0.8rem; font-weight: 500; cursor: pointer;
+      transition: background 0.2s, color 0.2s; line-height: 1.3; text-align: center;
+      -webkit-tap-highlight-color: transparent;
     }
+    .mode-tab.active { background: var(--accent); color: #fff; }
+    .mode-tab:not(.active):hover { background: var(--border); color: var(--text); }
 
-    .mode-tab.active {
-      background: var(--accent);
-      color: #fff;
-    }
+    /* View containers */
+    .view { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 340px; }
 
-    .mode-tab:not(.active):hover {
-      background: var(--border);
-      color: var(--text);
-    }
+    /* Phase strip */
+    .phase-strip { display: flex; gap: 8px; font-size: 0.75rem; color: var(--muted); flex-wrap: wrap; justify-content: center; }
+    .phase-chip { padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border); }
 
-    /* Phase info strip */
-    .phase-strip {
-      display: flex;
-      gap: 8px;
-      font-size: 0.75rem;
-      color: var(--muted);
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    .phase-chip {
-      padding: 3px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-    }
-
-    /* Circle arena */
+    /* Arena */
     .arena {
-      position: relative;
-      width: min(72vw, 280px);
-      height: min(72vw, 280px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: relative; width: min(72vw, 260px); height: min(72vw, 260px);
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .ring-bg {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-    }
-
+    .ring-bg { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--border); }
     .breath-circle {
-      width: 52%;
-      height: 52%;
-      border-radius: 50%;
+      width: 52%; height: 52%; border-radius: 50%;
       background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.35), rgba(88,166,255,0.08) 65%);
       box-shadow: 0 0 40px var(--accent-glow), 0 0 0 1px rgba(88,166,255,0.2);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1),
-                  background 0.5s, box-shadow 0.5s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), background 0.5s, box-shadow 0.5s;
       will-change: transform;
     }
+    .phase-label { font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; }
+    .phase-countdown { font-size: 2rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 
-    .phase-label {
-      font-size: 1.1rem;
-      font-weight: 600;
-      letter-spacing: 0.04em;
-    }
+    body.inhale .breath-circle { transform: scale(1.55); background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.45), rgba(88,166,255,0.1) 65%); box-shadow: 0 0 60px rgba(88,166,255,0.4), 0 0 0 1px rgba(88,166,255,0.3); }
+    body.hold   .breath-circle { transform: scale(1.55); background: radial-gradient(circle at 38% 35%, rgba(163,113,247,0.45), rgba(163,113,247,0.1) 65%); box-shadow: 0 0 60px rgba(163,113,247,0.4), 0 0 0 1px rgba(163,113,247,0.3); }
+    body.exhale .breath-circle { transform: scale(1.0);  background: radial-gradient(circle at 38% 35%, rgba(63,185,80,0.35), rgba(63,185,80,0.08) 65%);   box-shadow: 0 0 40px rgba(63,185,80,0.3), 0 0 0 1px rgba(63,185,80,0.2); }
+    body.hold2  .breath-circle { transform: scale(1.0);  background: radial-gradient(circle at 38% 35%, rgba(240,136,62,0.35), rgba(240,136,62,0.08) 65%); box-shadow: 0 0 40px rgba(240,136,62,0.3), 0 0 0 1px rgba(240,136,62,0.2); }
+    body.idle   .breath-circle { transform: scale(1.0); }
+    body.inhale .phase-label { color: var(--inhale); } body.hold .phase-label { color: var(--hold); }
+    body.exhale .phase-label { color: var(--exhale); } body.hold2 .phase-label { color: var(--hold2); }
 
-    .phase-countdown {
-      font-size: 2rem;
-      font-weight: 700;
-      line-height: 1;
-      font-variant-numeric: tabular-nums;
-    }
+    .svg-ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); pointer-events: none; }
+    .svg-ring circle { fill: none; stroke-width: 3; stroke-linecap: round; }
+    .svg-ring .track { stroke: var(--border); }
+    .svg-ring .progress-arc { stroke: var(--accent); transition: stroke 0.4s; }
 
-    /* States */
-    body.inhale .breath-circle {
-      transform: scale(1.55);
-      background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.45), rgba(88,166,255,0.1) 65%);
-      box-shadow: 0 0 60px rgba(88,166,255,0.4), 0 0 0 1px rgba(88,166,255,0.3);
-    }
-    body.hold .breath-circle {
-      transform: scale(1.55);
-      background: radial-gradient(circle at 38% 35%, rgba(163,113,247,0.45), rgba(163,113,247,0.1) 65%);
-      box-shadow: 0 0 60px rgba(163,113,247,0.4), 0 0 0 1px rgba(163,113,247,0.3);
-    }
-    body.exhale .breath-circle {
-      transform: scale(1.0);
-      background: radial-gradient(circle at 38% 35%, rgba(63,185,80,0.35), rgba(63,185,80,0.08) 65%);
-      box-shadow: 0 0 40px rgba(63,185,80,0.3), 0 0 0 1px rgba(63,185,80,0.2);
-    }
-    body.hold2 .breath-circle {
-      transform: scale(1.0);
-      background: radial-gradient(circle at 38% 35%, rgba(240,136,62,0.35), rgba(240,136,62,0.08) 65%);
-      box-shadow: 0 0 40px rgba(240,136,62,0.3), 0 0 0 1px rgba(240,136,62,0.2);
-    }
-    body.idle .breath-circle { transform: scale(1.0); }
-
-    /* Phase label colors */
-    body.inhale .phase-label  { color: var(--inhale); }
-    body.hold   .phase-label  { color: var(--hold);   }
-    body.exhale .phase-label  { color: var(--exhale); }
-    body.hold2  .phase-label  { color: var(--hold2);  }
-
-    /* Cycle counter */
-    .cycle-info {
-      font-size: 0.85rem;
-      color: var(--muted);
-      letter-spacing: 0.03em;
-    }
+    /* Cycle info */
+    .cycle-info { font-size: 0.85rem; color: var(--muted); }
     .cycle-info span { color: var(--text); font-weight: 600; }
 
-    /* Controls */
-    .controls {
-      display: flex;
-      gap: 12px;
-    }
-
+    /* Buttons */
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .btn {
-      padding: 12px 28px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: var(--surface);
-      color: var(--text);
-      font-size: 1rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+      padding: 11px 24px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--text); font-size: 0.95rem; font-weight: 500;
+      cursor: pointer; transition: background 0.15s, border-color 0.15s, transform 0.1s;
       -webkit-tap-highlight-color: transparent;
     }
     .btn:active { transform: scale(0.95); }
-    .btn.primary {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-      min-width: 120px;
-    }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; min-width: 110px; }
     .btn.primary:hover { background: #79b8ff; }
     .btn:not(.primary):hover { background: var(--border); }
+    .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+    .btn:disabled { opacity: 0.4; cursor: default; }
 
-    /* Toggles row */
-    .toggles {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .tog-label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.85rem;
-      color: var(--muted);
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
-    }
+    /* Toggles */
+    .toggles { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+    .tog-label { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--muted); cursor: pointer; -webkit-tap-highlight-color: transparent; user-select: none; }
     .tog-label input { display: none; }
-    .tog-pill {
-      width: 40px;
-      height: 22px;
-      border-radius: 11px;
-      background: var(--border);
-      position: relative;
-      transition: background 0.2s;
-      flex-shrink: 0;
-    }
-    .tog-pill::after {
-      content: '';
-      position: absolute;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: #fff;
-      top: 3px;
-      left: 3px;
-      transition: transform 0.2s;
-    }
+    .tog-pill { width: 40px; height: 22px; border-radius: 11px; background: var(--border); position: relative; transition: background 0.2s; flex-shrink: 0; }
+    .tog-pill::after { content: ''; position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #fff; top: 3px; left: 3px; transition: transform 0.2s; }
     .tog-label input:checked + .tog-pill { background: var(--accent); }
     .tog-label input:checked + .tog-pill::after { transform: translateX(18px); }
 
-    /* Entrainment panel */
-    .entrain-panel {
-      width: 100%;
-      max-width: 340px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      overflow: hidden;
-    }
-    .entrain-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 16px;
-    }
-    .entrain-header span {
-      font-size: 0.9rem;
-      color: var(--muted);
-    }
-    .entrain-body {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-      padding: 0 16px 16px;
-      border-top: 1px solid var(--border);
-    }
+    /* Entrainment */
+    .entrain-panel { width: 100%; max-width: 340px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .entrain-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; }
+    .entrain-header span { font-size: 0.85rem; color: var(--muted); }
+    .entrain-body { display: none; flex-direction: column; gap: 12px; padding: 0 16px 16px; border-top: 1px solid var(--border); }
     .entrain-body.open { display: flex; }
-    .entrain-mode-tabs {
-      display: flex;
-      gap: 6px;
-    }
-    .entrain-tab {
-      flex: 1;
-      padding: 8px 6px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: transparent;
-      color: var(--muted);
-      font-size: 0.78rem;
-      cursor: pointer;
-      text-align: center;
-      line-height: 1.4;
-      transition: background 0.15s, color 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .entrain-tab.active {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: #fff;
-    }
-    .entrain-hint {
-      font-size: 0.75rem;
-      color: var(--muted);
-      line-height: 1.5;
-    }
+    .entrain-mode-tabs { display: flex; gap: 6px; }
+    .entrain-tab { flex: 1; padding: 8px 6px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-align: center; line-height: 1.4; transition: background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent; }
+    .entrain-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .entrain-hint { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
     .entrain-hint b { color: var(--accent); }
-    .vol-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 0.8rem;
-      color: var(--muted);
-    }
-    .vol-row input[type=range] {
-      flex: 1;
-      accent-color: var(--accent);
-      height: 4px;
-      cursor: pointer;
-    }
+    .vol-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+    .vol-row input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; cursor: pointer; }
 
     /* Tips */
-    .tip {
-      font-size: 0.78rem;
-      color: var(--muted);
-      text-align: center;
-      max-width: 300px;
-      line-height: 1.6;
-    }
+    .tip { font-size: 0.78rem; color: var(--muted); text-align: center; max-width: 300px; line-height: 1.6; }
 
-    /* SVG progress ring overlay */
-    .svg-ring {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      transform: rotate(-90deg);
-      pointer-events: none;
-    }
-    .svg-ring circle {
-      fill: none;
-      stroke-width: 3;
-      stroke-linecap: round;
-    }
-    .svg-ring .track { stroke: var(--border); }
-    .svg-ring .progress-arc {
-      stroke: var(--accent);
-      transition: stroke 0.4s;
-    }
-
-    /* Complete overlay */
+    /* Standard mode complete overlay */
     .complete-screen {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: var(--bg);
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      padding: 32px;
-      text-align: center;
-      z-index: 10;
+      display: none; position: fixed; inset: 0; background: var(--bg);
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 24px; padding: 32px; text-align: center; z-index: 10;
     }
     .complete-screen.show { display: flex; }
     .complete-icon { font-size: 4rem; }
-    .complete-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      color: var(--text);
+    .complete-title { font-size: 1.5rem; font-weight: 600; }
+    .complete-msg { font-size: 0.9rem; color: var(--muted); max-width: 280px; line-height: 1.7; white-space: pre-line; }
+    .complete-cycles { font-size: 0.85rem; color: var(--accent); }
+
+    /* ── 111 Mode ── */
+    .step-card-wrap {
+      width: 100%; min-height: 130px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
     }
-    .complete-msg {
-      font-size: 0.95rem;
-      color: var(--muted);
-      max-width: 280px;
-      line-height: 1.7;
+    .step-card { display: none; flex-direction: column; gap: 10px; padding: 18px; }
+    .step-card.active { display: flex; }
+    .step-num { font-size: 0.72rem; color: var(--accent); font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+    .step-text { font-size: 0.88rem; color: var(--text); line-height: 1.7; }
+    .step-dots { display: flex; gap: 6px; justify-content: center; }
+    .step-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--border); transition: background 0.2s; }
+    .step-dot.active { background: var(--accent); }
+    .step-nav { display: flex; gap: 8px; width: 100%; }
+    .step-nav .btn { flex: 1; padding: 10px; }
+
+    .counter-111 { font-size: 1rem; color: var(--muted); }
+    .counter-111 b { color: var(--text); font-size: 1.4rem; font-weight: 700; }
+
+    .finish-block { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; width: 100%; }
+    .finish-icon { font-size: 3rem; }
+    .finish-title { font-size: 1.2rem; font-weight: 600; }
+    .finish-msg { font-size: 0.85rem; color: var(--muted); line-height: 1.7; max-width: 270px; }
+
+    .rub-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+      padding: 20px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 12px;
     }
-    .complete-cycles {
-      font-size: 0.85rem;
-      color: var(--accent);
-    }
+    .rub-num { font-size: 3rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; }
+    .rub-sub { font-size: 0.8rem; color: var(--muted); }
+    .rub-btn { width: 72px; height: 72px; border-radius: 50%; font-size: 1.4rem; padding: 0; min-width: unset; }
+    .rub-done { color: var(--exhale); font-weight: 600; font-size: 0.95rem; display: none; }
+    .rub-done.show { display: block; }
+
+    /* ── Wim Hof Mode ── */
+    .wh-safety-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; width: 100%; }
+    .wh-safety-title { font-size: 0.95rem; font-weight: 600; color: var(--danger); margin-bottom: 10px; }
+    .wh-safety-text { font-size: 0.84rem; color: var(--muted); line-height: 1.75; }
+
+    .wh-round-info { font-size: 0.88rem; color: var(--muted); }
+    .wh-round-info b { color: var(--text); }
+
+    .wh-breath-count { font-size: 1rem; color: var(--muted); }
+    .wh-breath-count b { color: var(--accent); font-size: 1.4rem; font-weight: 700; }
+
+    .wh-big-timer { font-size: 5.5rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; color: var(--text); }
+    .wh-phase-title { font-size: 1rem; font-weight: 600; }
+    .wh-phase-sub { font-size: 0.78rem; color: var(--muted); }
+
+    .wh-rounddone-icon { font-size: 2.5rem; }
   </style>
 </head>
 <body class="idle">
@@ -434,58 +220,201 @@
 
   <p class="scenario-hint" id="scenarioHint"></p>
 
+  <!-- Mode tabs — 2×2 -->
   <div class="mode-tabs">
     <button class="mode-tab active" data-mode="478">4-7-8 呼吸法</button>
-    <button class="mode-tab" data-mode="box">Box Breathing<br>4-4-4-4</button>
+    <button class="mode-tab" data-mode="box">Box 4-4-4-4</button>
+    <button class="mode-tab" data-mode="111">111 呼吸法</button>
+    <button class="mode-tab" data-mode="wimhof">🧊 冰人呼吸</button>
   </div>
 
-  <div class="phase-strip" id="phaseStrip"></div>
-
-  <div class="arena">
-    <div class="ring-bg"></div>
-    <svg class="svg-ring" viewBox="0 0 100 100">
-      <circle class="track" cx="50" cy="50" r="47"/>
-      <circle class="progress-arc" id="progressArc" cx="50" cy="50" r="47"/>
-    </svg>
-    <div class="breath-circle">
-      <div class="phase-label" id="phaseLabel">準備</div>
-      <div class="phase-countdown" id="countdown">—</div>
+  <!-- ── Standard View (478, box) ── -->
+  <div class="view" id="standardView">
+    <div class="phase-strip" id="phaseStrip"></div>
+    <div class="arena">
+      <div class="ring-bg"></div>
+      <svg class="svg-ring" viewBox="0 0 100 100">
+        <circle class="track" cx="50" cy="50" r="47"/>
+        <circle class="progress-arc" id="progressArc" cx="50" cy="50" r="47"/>
+      </svg>
+      <div class="breath-circle">
+        <div class="phase-label" id="phaseLabel">準備</div>
+        <div class="phase-countdown" id="countdown">—</div>
+      </div>
+    </div>
+    <div class="cycle-info">已完成循環：<span id="cycleCount">0</span><span id="cycleGoal"></span></div>
+    <div class="controls">
+      <button class="btn primary" id="startBtn">開始</button>
+      <button class="btn" id="resetBtn">重置</button>
     </div>
   </div>
 
-  <div class="cycle-info">已完成循環：<span id="cycleCount">0</span><span id="cycleGoal"></span></div>
+  <!-- ── 111 View ── -->
+  <div class="view" id="view111" style="display:none">
 
-  <div class="controls">
-    <button class="btn primary" id="startBtn">開始</button>
-    <button class="btn" id="resetBtn">重置</button>
+    <!-- Step guide -->
+    <div id="panel111Guide" style="display:flex;flex-direction:column;align-items:center;gap:12px;width:100%">
+      <div class="step-card-wrap">
+        <div class="step-card active">
+          <div class="step-num">步驟 1 / 4</div>
+          <div class="step-text">坐姿挺直，脊椎像松樹一樣直立。</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">步驟 2 / 4</div>
+          <div class="step-text">左手貼胸口，右手覆蓋肚臍下方三寸，注意力完全放在右手。</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">步驟 3 / 4</div>
+          <div class="step-text">吸氣時肚子鼓起，屏氣 3 秒，呼氣時肚子內收，並想像排出壓力與焦慮。</div>
+        </div>
+        <div class="step-card">
+          <div class="step-num">步驟 4 / 4</div>
+          <div class="step-text">舌尖輕抵上顎，全程保持。準備好後開始練習。</div>
+        </div>
+      </div>
+      <div class="step-dots" id="stepDots">
+        <div class="step-dot active"></div><div class="step-dot"></div>
+        <div class="step-dot"></div><div class="step-dot"></div>
+      </div>
+      <div class="step-nav">
+        <button class="btn" id="step111Prev">上一步</button>
+        <button class="btn primary" id="step111Next">下一步</button>
+      </div>
+    </div>
+
+    <!-- Exercise -->
+    <div id="panel111Exercise" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+      <div class="arena">
+        <div class="ring-bg"></div>
+        <svg class="svg-ring" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="47"/>
+          <circle class="progress-arc" id="progressArc111" cx="50" cy="50" r="47"/>
+        </svg>
+        <div class="breath-circle">
+          <div class="phase-label" id="phaseLabel111">準備</div>
+          <div class="phase-countdown" id="countdown111">—</div>
+        </div>
+      </div>
+      <div class="counter-111">第 <b id="count111">0</b> / 111 次</div>
+      <div class="controls">
+        <button class="btn primary" id="startBtn111">開始</button>
+        <button class="btn" id="resetBtn111">重置</button>
+      </div>
+    </div>
+
+    <!-- Complete -->
+    <div id="panel111Complete" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+      <div class="finish-block">
+        <div class="finish-icon">🌟</div>
+        <div class="finish-title">完成 111 次呼吸！</div>
+        <div class="finish-msg">請快速搓熱雙手，敷在眼睛上，<br>再順時針揉腹 36 次。</div>
+        <div class="rub-card">
+          <div class="rub-num" id="rubCount">0</div>
+          <div class="rub-sub">/ 36 次揉腹</div>
+          <button class="btn primary rub-btn" id="rubBtn">＋1</button>
+          <div class="rub-done" id="rubDone">✅ 揉腹完成！</div>
+        </div>
+        <button class="btn" id="restart111Btn">重新開始</button>
+      </div>
+    </div>
   </div>
 
+  <!-- ── Wim Hof View ── -->
+  <div class="view" id="viewWimhof" style="display:none">
+
+    <!-- Safety -->
+    <div id="whPanelSafety" style="display:flex;flex-direction:column;align-items:center;gap:16px;width:100%">
+      <div class="wh-safety-card">
+        <div class="wh-safety-title">⚠️ 安全提示</div>
+        <div class="wh-safety-text">
+          請勿在水中、開車或站立時練習。<br>
+          若感到頭暈、手麻或不適，請立即停止並坐下休息。<br>
+          此練習會暫時降低血中二氧化碳，輕微頭暈屬正常現象。
+        </div>
+      </div>
+      <button class="btn primary" id="startWimhofBtn">我已了解，開始練習</button>
+    </div>
+
+    <!-- Exercise -->
+    <div id="whPanelExercise" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+      <div class="wh-round-info">已完成輪次：<b id="whRoundNum">0</b> / 4</div>
+
+      <!-- Phase 1: power breathing -->
+      <div id="wh-p1" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%">
+        <div class="wh-phase-title" style="color:var(--inhale)">快速深呼吸</div>
+        <div class="arena">
+          <div class="ring-bg"></div>
+          <svg class="svg-ring" viewBox="0 0 100 100">
+            <circle class="track" cx="50" cy="50" r="47"/>
+            <circle class="progress-arc" id="progressArcWh" cx="50" cy="50" r="47"/>
+          </svg>
+          <div class="breath-circle">
+            <div class="phase-label" id="phaseLabelWh">吸氣</div>
+          </div>
+        </div>
+        <div class="wh-breath-count">深呼吸 <b id="whBreathNum">0</b> / 25</div>
+        <div class="controls">
+          <button class="btn primary" id="whStartBtn">開始</button>
+          <button class="btn" id="whResetBtn">重置</button>
+        </div>
+      </div>
+
+      <!-- Phase 2: hold -->
+      <div id="wh-p2" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+        <div class="wh-phase-title" style="color:var(--hold)">呼氣後屏住呼吸</div>
+        <div class="wh-big-timer" id="whHoldTimer">60</div>
+        <div class="wh-phase-sub">秒（最長 60 秒）</div>
+        <button class="btn danger" id="whGiveUpBtn">我撐不住了</button>
+      </div>
+
+      <!-- Phase 3: recovery -->
+      <div id="wh-p3" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+        <div class="wh-phase-title" style="color:var(--exhale)">深吸一口氣，屏住</div>
+        <div class="wh-big-timer" id="whRecovTimer">15</div>
+        <div class="wh-phase-sub">秒</div>
+      </div>
+
+      <!-- Round done -->
+      <div id="wh-rounddone" style="display:none;flex-direction:column;align-items:center;gap:14px;text-align:center;width:100%">
+        <div class="wh-rounddone-icon">💪</div>
+        <div class="finish-title" id="whRoundDoneTitle">第 1 輪完成！</div>
+        <div class="wh-phase-sub">稍作休息，準備好後繼續下一輪</div>
+        <div class="controls">
+          <button class="btn primary" id="whNextRoundBtn">繼續下一輪</button>
+          <button class="btn" id="whFinishBtn">結束練習</button>
+        </div>
+      </div>
+
+      <!-- All done -->
+      <div id="wh-alldone" style="display:none;flex-direction:column;align-items:center;gap:14px;text-align:center;width:100%">
+        <div class="finish-icon">🧊✨</div>
+        <div class="finish-title">4 輪冰人呼吸完成！</div>
+        <div class="finish-msg">身體已充分氧化，感受此刻的清醒與能量。</div>
+        <button class="btn" id="whRestartBtn">重新開始</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Shared bottom controls ── -->
   <div class="controls">
     <button class="btn" id="testVibBtn">測試震動</button>
   </div>
-
   <p style="font-size:0.8rem;color:var(--muted)">vibrate 支援：<span id="vibSupport" style="color:var(--text);font-weight:600"></span></p>
 
   <div class="toggles">
     <label class="tog-label">
-      <input type="checkbox" id="vibToggle" />
-      <span class="tog-pill"></span>
-      <span id="vibLabel">震動</span>
+      <input type="checkbox" id="vibToggle" /><span class="tog-pill"></span><span>震動</span>
     </label>
     <label class="tog-label">
-      <input type="checkbox" id="soundToggle" />
-      <span class="tog-pill"></span>
-      <span>聲音</span>
+      <input type="checkbox" id="soundToggle" /><span class="tog-pill"></span><span>聲音</span>
     </label>
   </div>
 
-  <!-- 調頻音面板 -->
   <div class="entrain-panel">
     <div class="entrain-header">
       <span>🎵 調頻音（7.83Hz Schumann）</span>
       <label class="tog-label" style="margin:0">
-        <input type="checkbox" id="entrainToggle" />
-        <span class="tog-pill"></span>
+        <input type="checkbox" id="entrainToggle" /><span class="tog-pill"></span>
       </label>
     </div>
     <div class="entrain-body" id="entrainBody">
@@ -494,8 +423,7 @@
         <button class="entrain-tab" id="tabIso">等響節拍<br><small>免耳機</small></button>
       </div>
       <p class="entrain-hint" id="entrainHint">
-        <b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。<br>
-        建議佩戴耳機以獲得最佳效果。
+        <b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。建議佩戴耳機。
       </p>
       <div class="vol-row">
         <span>音量</span>
@@ -507,7 +435,7 @@
 
   <p class="tip" id="tipText"></p>
 
-  <!-- 完成畫面 -->
+  <!-- Standard mode complete overlay -->
   <div class="complete-screen" id="completeScreen">
     <div class="complete-icon" id="completeIcon">✨</div>
     <div class="complete-title" id="completeTitle">練習完成</div>
@@ -518,464 +446,669 @@
   </div>
 
   <script>
-    // ─── Scenarios ─────────────────────────────────────────────────────────────
-    const SCENARIOS = {
-      free:     { mode: null,  cycles: 0,  hint: '',
-                  icon: '✨', title: '自由練習完成', msg: '很好，每一次呼吸都是對自己的關照。' },
-      sleep:    { mode: '478', cycles: 3,  hint: '活化副交感神經，幫助身體進入休息模式',
-                  icon: '😴', title: '睡前放鬆完成', msg: '身體已準備好進入休息。\n放下手機，讓自己慢慢入睡。' },
-      anxiety:  { mode: '478', cycles: 5,  hint: '延長呼氣可快速平緩過度活躍的神經系統',
-                  icon: '🌿', title: '緊張已緩解', msg: '你已平息了神經系統的風暴。\n此刻的你比剛才更穩定了。' },
-      meditate: { mode: 'box', cycles: 5,  hint: '讓心智進入穩定中性狀態，適合冥想前使用',
-                  icon: '🧘', title: '調頻完成', msg: '心智已準備好進入冥想。\n保持這份靜定，繼續深入。' },
-      focus:    { mode: 'box', cycles: 3,  hint: '平衡自律神經，提升注意力與清醒度',
-                  icon: '🎯', title: '專注已就緒', msg: '神經系統已平衡，注意力清晰。\n現在是投入工作的好時機。' },
-      morning:  { mode: 'box', cycles: 4,  hint: '喚醒身心，為今天設定穩定的基調',
-                  icon: '🌅', title: '早晨啟動完成', msg: '身心已醒來，今天有個好的開始。\n帶著這份穩定迎接新的一天。' },
-    };
+  // ─── Scenarios ────────────────────────────────────────────────────────────
+  const SCENARIOS = {
+    free:     { mode: null,  cycles: 0, hint: '', icon: '✨', title: '自由練習完成', msg: '很好，每一次呼吸都是對自己的關照。' },
+    sleep:    { mode: '478', cycles: 3, hint: '活化副交感神經，幫助身體進入休息模式', icon: '😴', title: '睡前放鬆完成', msg: '身體已準備好進入休息。\n放下手機，讓自己慢慢入睡。' },
+    anxiety:  { mode: '478', cycles: 5, hint: '延長呼氣可快速平緩過度活躍的神經系統', icon: '🌿', title: '緊張已緩解', msg: '你已平息了神經系統的風暴。\n此刻的你比剛才更穩定了。' },
+    meditate: { mode: 'box', cycles: 5, hint: '讓心智進入穩定中性狀態，適合冥想前使用', icon: '🧘', title: '調頻完成', msg: '心智已準備好進入冥想。\n保持這份靜定，繼續深入。' },
+    focus:    { mode: 'box', cycles: 3, hint: '平衡自律神經，提升注意力與清醒度', icon: '🎯', title: '專注已就緒', msg: '神經系統已平衡，注意力清晰。\n現在是投入工作的好時機。' },
+    morning:  { mode: 'box', cycles: 4, hint: '喚醒身心，為今天設定穩定的基調', icon: '🌅', title: '早晨啟動完成', msg: '身心已醒來，今天有個好的開始。\n帶著這份穩定迎接新的一天。' },
+  };
 
-    // ─── Config ────────────────────────────────────────────────────────────────
-    const MODES = {
-      '478': {
-        phases: [
-          { key: 'inhale',  label: '吸氣', secs: 4 },
-          { key: 'hold',    label: '屏氣', secs: 7 },
-          { key: 'exhale',  label: '呼氣', secs: 8 },
-        ],
-        tip: '4-7-8 呼吸法有助於放鬆神經系統，減輕焦慮與助眠。',
-        arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' },
-      },
-      'box': {
-        phases: [
-          { key: 'inhale',  label: '吸氣', secs: 4 },
-          { key: 'hold',    label: '屏氣', secs: 4 },
-          { key: 'exhale',  label: '呼氣', secs: 4 },
-          { key: 'hold2',   label: '靜止', secs: 4 },
-        ],
-        tip: 'Box Breathing 是軍警常用的專注與冷靜技術，每邊各 4 秒。',
-        arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950', hold2:'#f0883e' },
-      },
-    };
+  // ─── Standard breathing modes ─────────────────────────────────────────────
+  const STD_MODES = {
+    '478': {
+      phases: [
+        { key: 'inhale', label: '吸氣', secs: 4 },
+        { key: 'hold',   label: '屏氣', secs: 7 },
+        { key: 'exhale', label: '呼氣', secs: 8 },
+      ],
+      tip: '4-7-8 呼吸法有助於放鬆神經系統，減輕焦慮與助眠。',
+      arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' },
+    },
+    'box': {
+      phases: [
+        { key: 'inhale', label: '吸氣', secs: 4 },
+        { key: 'hold',   label: '屏氣', secs: 4 },
+        { key: 'exhale', label: '呼氣', secs: 4 },
+        { key: 'hold2',  label: '靜止', secs: 4 },
+      ],
+      tip: 'Box Breathing 是軍警常用的專注與冷靜技術，每邊各 4 秒。',
+      arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950', hold2:'#f0883e' },
+    },
+  };
 
-    // ─── State ─────────────────────────────────────────────────────────────────
-    let currentMode = '478';
-    let currentScenario = 'free';
-    let running = false;
-    let phaseIdx = 0;
-    let secondsLeft = 0;
-    let cycleCount = 0;
-    let ticker = null;
+  const PHASES_111 = [
+    { key: 'inhale', label: '吸氣', secs: 6 },
+    { key: 'hold',   label: '屏氣', secs: 3 },
+    { key: 'exhale', label: '呼氣', secs: 6 },
+  ];
+  const ARC_COLOR_111 = { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' };
 
-    // ─── DOM refs ──────────────────────────────────────────────────────────────
-    const body           = document.body;
-    const startBtn       = document.getElementById('startBtn');
-    const resetBtn       = document.getElementById('resetBtn');
-    const phaseLabel     = document.getElementById('phaseLabel');
-    const countdown      = document.getElementById('countdown');
-    const cycleEl        = document.getElementById('cycleCount');
-    const cycleGoalEl    = document.getElementById('cycleGoal');
-    const phaseStrip     = document.getElementById('phaseStrip');
-    const tipText        = document.getElementById('tipText');
-    const progressArc    = document.getElementById('progressArc');
-    const modeTabs       = document.querySelectorAll('.mode-tab');
-    const scenarioSelect = document.getElementById('scenarioSelect');
-    const scenarioHint   = document.getElementById('scenarioHint');
-    const completeScreen = document.getElementById('completeScreen');
+  // ─── Global state ─────────────────────────────────────────────────────────
+  let currentMode     = '478';
+  let currentScenario = 'free';
 
-    // ─── SVG ring helper ───────────────────────────────────────────────────────
-    const CIRCUMFERENCE = 2 * Math.PI * 47;
-    progressArc.style.strokeDasharray = CIRCUMFERENCE;
-    progressArc.style.strokeDashoffset = CIRCUMFERENCE;
+  // Standard
+  let stdRunning = false, stdPhaseIdx = 0, stdSecsLeft = 0, stdCycleCount = 0, stdTicker = null;
 
-    function setArcProgress(fraction, color) {
-      progressArc.style.strokeDashoffset = CIRCUMFERENCE * (1 - fraction);
-      progressArc.style.stroke = color;
-    }
+  // 111
+  let s111Running = false, s111PhaseIdx = 0, s111SecsLeft = 0, s111BreathCount = 0, s111Ticker = null;
+  let guideStep = 0;
+  let rubCount  = 0;
 
-    // ─── UI builders ──────────────────────────────────────────────────────────
-    function buildPhaseStrip(mode) {
-      const { phases } = MODES[mode];
-      phaseStrip.innerHTML = phases
-        .map(p => `<div class="phase-chip">${p.label} ${p.secs}s</div>`)
-        .join('');
-      tipText.textContent = MODES[mode].tip;
-    }
+  // Wim Hof
+  let whRunning = false, whRound = 0;
+  let whBreathCount = 0, whBreathPhase = 'inhale';
+  let whBreathAnimId = null, whBreathStart = null;
+  let whHoldTicker = null, whRecovTicker = null;
 
-    function setBodyPhase(key) {
-      body.classList.remove('idle','inhale','hold','exhale','hold2');
-      body.classList.add(key);
-    }
+  // ─── DOM refs ─────────────────────────────────────────────────────────────
+  const bodyEl         = document.body;
+  const scenarioSelect = document.getElementById('scenarioSelect');
+  const scenarioHint   = document.getElementById('scenarioHint');
+  const modeTabs       = document.querySelectorAll('.mode-tab');
 
-    function updateDisplay(phase, secs, totalSecs) {
-      phaseLabel.textContent = phase.label;
-      countdown.textContent  = secs;
-      const fraction = 1 - (secs / totalSecs);
-      setArcProgress(fraction, MODES[currentMode].arcColor[phase.key]);
-      setBodyPhase(phase.key);
-    }
+  // Standard
+  const standardView = document.getElementById('standardView');
+  const phaseStrip   = document.getElementById('phaseStrip');
+  const progressArc  = document.getElementById('progressArc');
+  const phaseLabel   = document.getElementById('phaseLabel');
+  const countdown    = document.getElementById('countdown');
+  const cycleCountEl = document.getElementById('cycleCount');
+  const cycleGoalEl  = document.getElementById('cycleGoal');
+  const startBtn     = document.getElementById('startBtn');
+  const resetBtn     = document.getElementById('resetBtn');
+  const tipText      = document.getElementById('tipText');
+  const completeScreen = document.getElementById('completeScreen');
 
-    function syncModeTab(mode) {
-      modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-    }
+  // 111
+  const view111           = document.getElementById('view111');
+  const panel111Guide     = document.getElementById('panel111Guide');
+  const panel111Exercise  = document.getElementById('panel111Exercise');
+  const panel111Complete  = document.getElementById('panel111Complete');
+  const stepCards         = document.querySelectorAll('#panel111Guide .step-card');
+  const stepDots          = document.querySelectorAll('#stepDots .step-dot');
+  const step111Prev       = document.getElementById('step111Prev');
+  const step111Next       = document.getElementById('step111Next');
+  const progressArc111    = document.getElementById('progressArc111');
+  const phaseLabel111     = document.getElementById('phaseLabel111');
+  const countdown111      = document.getElementById('countdown111');
+  const count111El        = document.getElementById('count111');
+  const startBtn111       = document.getElementById('startBtn111');
+  const resetBtn111       = document.getElementById('resetBtn111');
+  const rubCountEl        = document.getElementById('rubCount');
+  const rubBtn            = document.getElementById('rubBtn');
+  const rubDone           = document.getElementById('rubDone');
+  const restart111Btn     = document.getElementById('restart111Btn');
 
-    // ─── Scenario switching ───────────────────────────────────────────────────
-    function applyScenario(key) {
-      currentScenario = key;
-      const sc = SCENARIOS[key];
-      scenarioHint.textContent = sc.hint;
+  // Wim Hof
+  const viewWimhof       = document.getElementById('viewWimhof');
+  const whPanelSafety    = document.getElementById('whPanelSafety');
+  const whPanelExercise  = document.getElementById('whPanelExercise');
+  const startWimhofBtn   = document.getElementById('startWimhofBtn');
+  const whRoundNumEl     = document.getElementById('whRoundNum');
+  const whBreathNumEl    = document.getElementById('whBreathNum');
+  const progressArcWh    = document.getElementById('progressArcWh');
+  const phaseLabelWh     = document.getElementById('phaseLabelWh');
+  const whStartBtn       = document.getElementById('whStartBtn');
+  const whResetBtn       = document.getElementById('whResetBtn');
+  const whHoldTimerEl    = document.getElementById('whHoldTimer');
+  const whGiveUpBtn      = document.getElementById('whGiveUpBtn');
+  const whRecovTimerEl   = document.getElementById('whRecovTimer');
+  const whRoundDoneTitle = document.getElementById('whRoundDoneTitle');
+  const whNextRoundBtn   = document.getElementById('whNextRoundBtn');
+  const whFinishBtn      = document.getElementById('whFinishBtn');
+  const whRestartBtn     = document.getElementById('whRestartBtn');
 
-      if (sc.mode && sc.mode !== currentMode) {
-        currentMode = sc.mode;
-        syncModeTab(currentMode);
-        buildPhaseStrip(currentMode);
+  // ─── Arc helpers ──────────────────────────────────────────────────────────
+  const CIRC = 2 * Math.PI * 47;
+  function initArc(el) { el.style.strokeDasharray = CIRC; el.style.strokeDashoffset = CIRC; }
+  function setArc(el, fraction, color) {
+    el.style.strokeDashoffset = CIRC * (1 - fraction);
+    el.style.stroke = color;
+  }
+  initArc(progressArc); initArc(progressArc111); initArc(progressArcWh);
+
+  function setBodyPhase(key) {
+    bodyEl.classList.remove('idle','inhale','hold','exhale','hold2');
+    bodyEl.classList.add(key);
+  }
+
+  // ─── View management ──────────────────────────────────────────────────────
+  function showView(name) {
+    standardView.style.display = name === 'standard' ? 'flex' : 'none';
+    view111.style.display      = name === '111'      ? 'flex' : 'none';
+    viewWimhof.style.display   = name === 'wimhof'   ? 'flex' : 'none';
+  }
+
+  function switchMode(mode) {
+    stopAll();
+    currentMode = mode;
+    modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+
+    if (mode === '478' || mode === 'box') {
+      showView('standard');
+      buildPhaseStrip(mode);
+      tipText.textContent = STD_MODES[mode].tip;
+      if (SCENARIOS[currentScenario].mode && SCENARIOS[currentScenario].mode !== mode) {
+        scenarioSelect.value = 'free'; applyScenario('free');
       }
-
-      const goal = sc.cycles;
-      cycleGoalEl.textContent = goal > 0 ? ` / ${goal}` : '';
+    } else if (mode === '111') {
+      showView('111');
+      tipText.textContent = '111 次腹式呼吸有助於深度放鬆與能量調整。';
+      show111Section('guide');
+    } else if (mode === 'wimhof') {
+      showView('wimhof');
+      tipText.textContent = '冰人呼吸法由 Wim Hof 開創，透過過度換氣與屏氣訓練提升身體耐受力。';
+      showWhSection('safety');
     }
+    setBodyPhase('idle');
+  }
 
-    scenarioSelect.addEventListener('change', () => {
-      reset();
-      applyScenario(scenarioSelect.value);
-    });
+  function stopAll() {
+    // Stop standard
+    if (stdTicker) { clearInterval(stdTicker); stdTicker = null; }
+    stdRunning = false;
+    // Stop 111
+    if (s111Ticker) { clearInterval(s111Ticker); s111Ticker = null; }
+    s111Running = false;
+    // Stop wim hof
+    stopWhAll();
+    releaseWakeLock();
+    stopEntrainment();
+  }
 
-    // ─── Complete screen ──────────────────────────────────────────────────────
-    function showComplete() {
-      const sc = SCENARIOS[currentScenario];
-      document.getElementById('completeIcon').textContent  = sc.icon;
-      document.getElementById('completeTitle').textContent = sc.title;
-      document.getElementById('completeMsg').textContent   = sc.msg;
-      document.getElementById('completeCycles').textContent =
-        `已完成 ${cycleCount} 個循環`;
-      completeScreen.classList.add('show');
-      releaseWakeLock();
-      stopEntrainment();
-      doVibrate([100, 80, 100, 80, 200]);
-    }
+  // ─── Vibration & Audio ────────────────────────────────────────────────────
+  let vibEnabled = false;
+  document.getElementById('vibToggle').addEventListener('change', function() {
+    vibEnabled = this.checked;
+    if (vibEnabled && 'vibrate' in navigator) navigator.vibrate([100,80,100]);
+  });
+  function doVibrate(p) { if (vibEnabled && 'vibrate' in navigator) navigator.vibrate(p); }
 
-    document.getElementById('restartBtn').addEventListener('click', () => {
-      completeScreen.classList.remove('show');
-      reset();
-    });
+  let audioCtx = null, soundEnabled = false;
+  const PHASE_TONE = { inhale:528, hold:396, exhale:285, hold2:396 };
+  function getAudioCtx() {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  function playTone(freq, dur = 0.15) {
+    if (!soundEnabled) return;
+    try {
+      const ctx = getAudioCtx();
+      const osc = ctx.createOscillator(), g = ctx.createGain();
+      osc.connect(g); g.connect(ctx.destination);
+      osc.type = 'sine'; osc.frequency.value = freq;
+      g.gain.setValueAtTime(0.4, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      osc.start(); osc.stop(ctx.currentTime + dur);
+    } catch(e) {}
+  }
+  document.getElementById('soundToggle').addEventListener('change', function() {
+    soundEnabled = this.checked;
+    if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
+  });
 
-    document.getElementById('completeResetBtn').addEventListener('click', () => {
-      completeScreen.classList.remove('show');
-      scenarioSelect.value = 'free';
-      applyScenario('free');
-      reset();
-    });
+  // ─── WakeLock ─────────────────────────────────────────────────────────────
+  let wakeLock = null;
+  async function acquireWakeLock() {
+    if (!('wakeLock' in navigator)) return;
+    try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } catch(e) {}
+  }
+  function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
-    // ─── Vibration ─────────────────────────────────────────────────────────────
-    let vibEnabled = false;
-    const vibToggle = document.getElementById('vibToggle');
-
-    vibToggle.addEventListener('change', () => {
-      vibEnabled = vibToggle.checked;
-      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate([100, 80, 100]);
-    });
-
-    function doVibrate(pattern) {
-      if (vibEnabled && 'vibrate' in navigator) navigator.vibrate(pattern);
-    }
-
-    // ─── Web Audio ─────────────────────────────────────────────────────────────
-    let audioCtx = null;
-    let soundEnabled = false;
-    const soundToggle = document.getElementById('soundToggle');
-    const PHASE_TONE = { inhale: 528, hold: 396, exhale: 285, hold2: 396 };
-
-    function getAudioCtx() {
-      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      return audioCtx;
-    }
-
-    function playTone(freq, duration = 0.15) {
-      if (!soundEnabled) return;
-      try {
-        const ctx = getAudioCtx();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, ctx.currentTime);
-        gain.gain.setValueAtTime(0.4, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + duration);
-      } catch(e) {}
-    }
-
-    soundToggle.addEventListener('change', () => {
-      soundEnabled = soundToggle.checked;
-      if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
-    });
-
-    // ─── Entrainment ───────────────────────────────────────────────────────────
-    let entrainEnabled = false;
-    let entrainMode = 'binaural'; // 'binaural' | 'iso'
-    let entrainNodes = null;
-
-    const entrainToggle = document.getElementById('entrainToggle');
-    const entrainBody   = document.getElementById('entrainBody');
-    const tabBinaural   = document.getElementById('tabBinaural');
-    const tabIso        = document.getElementById('tabIso');
-    const entrainHint   = document.getElementById('entrainHint');
-    const entrainVol    = document.getElementById('entrainVol');
-    const entrainVolVal = document.getElementById('entrainVolVal');
-
-    const ENTRAIN_HINTS = {
-      binaural: '<b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。<br>建議佩戴耳機以獲得最佳效果。',
-      iso:      '<b>等響節拍</b>：200Hz 基礎音以 7.83Hz 速率脈衝調幅，免耳機也有效。',
-    };
-
-    function startEntrainment() {
-      if (!entrainEnabled) return;
-      stopEntrainment();
-      try {
-        const ctx = getAudioCtx();
-        const vol = entrainVol.value / 100 * 0.4; // max 0.4 gain
-        const masterGain = ctx.createGain();
-        masterGain.gain.setValueAtTime(vol, ctx.currentTime);
-        masterGain.connect(ctx.destination);
-
-        if (entrainMode === 'binaural') {
-          // 左耳 200Hz，右耳 207.83Hz
-          const merger = ctx.createChannelMerger(2);
-          merger.connect(masterGain);
-
-          const oscL = ctx.createOscillator();
-          const gainL = ctx.createGain();
-          oscL.frequency.value = 200;
-          oscL.type = 'sine';
-          gainL.gain.value = 1;
-          oscL.connect(gainL);
-          gainL.connect(merger, 0, 0);
-          oscL.start();
-
-          const oscR = ctx.createOscillator();
-          const gainR = ctx.createGain();
-          oscR.frequency.value = 207.83;
-          oscR.type = 'sine';
-          gainR.gain.value = 1;
-          oscR.connect(gainR);
-          gainR.connect(merger, 0, 1);
-          oscR.start();
-
-          entrainNodes = { type: 'binaural', oscL, oscR, masterGain };
-        } else {
-          // 等響節拍：200Hz 載波 × 7.83Hz LFO 調幅
-          const osc = ctx.createOscillator();
-          osc.frequency.value = 200;
-          osc.type = 'sine';
-
-          const lfo = ctx.createOscillator();
-          lfo.frequency.value = 7.83;
-          lfo.type = 'sine';
-
-          const lfoGain = ctx.createGain();
-          lfoGain.gain.value = 0.5;
-          lfo.connect(lfoGain);
-
-          const ampGain = ctx.createGain();
-          ampGain.gain.value = 0.5;
-          lfoGain.connect(ampGain.gain);
-
-          osc.connect(ampGain);
-          ampGain.connect(masterGain);
-
-          osc.start();
-          lfo.start();
-
-          entrainNodes = { type: 'iso', osc, lfo, masterGain };
-        }
-      } catch(e) {}
-    }
-
-    function stopEntrainment() {
-      if (!entrainNodes) return;
-      try {
-        if (entrainNodes.type === 'binaural') {
-          entrainNodes.oscL.stop();
-          entrainNodes.oscR.stop();
-        } else {
-          entrainNodes.osc.stop();
-          entrainNodes.lfo.stop();
-        }
-        entrainNodes.masterGain.disconnect();
-      } catch(e) {}
-      entrainNodes = null;
-    }
-
-    function updateEntrainVolume() {
-      if (!entrainNodes) return;
-      const vol = entrainVol.value / 100 * 0.4;
-      try {
-        entrainNodes.masterGain.gain.setValueAtTime(vol, getAudioCtx().currentTime);
-      } catch(e) {}
-    }
-
-    entrainToggle.addEventListener('change', () => {
-      entrainEnabled = entrainToggle.checked;
-      entrainBody.classList.toggle('open', entrainEnabled);
-      if (entrainEnabled) {
-        getAudioCtx();
-        if (running) startEntrainment();
+  // ─── Entrainment ──────────────────────────────────────────────────────────
+  let entrainEnabled = false, entrainMode = 'binaural', entrainNodes = null;
+  const entrainToggle = document.getElementById('entrainToggle');
+  const entrainBody   = document.getElementById('entrainBody');
+  const tabBinaural   = document.getElementById('tabBinaural');
+  const tabIso        = document.getElementById('tabIso');
+  const entrainHint   = document.getElementById('entrainHint');
+  const entrainVol    = document.getElementById('entrainVol');
+  const entrainVolVal = document.getElementById('entrainVolVal');
+  const ENTRAIN_HINTS = {
+    binaural: '<b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。建議佩戴耳機。',
+    iso:      '<b>等響節拍</b>：200Hz 基礎音以 7.83Hz 速率脈衝調幅，免耳機也有效。',
+  };
+  function startEntrainment() {
+    if (!entrainEnabled) return; stopEntrainment();
+    try {
+      const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
+      const master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
+      if (entrainMode === 'binaural') {
+        const merger = ctx.createChannelMerger(2); merger.connect(master);
+        const oscL = ctx.createOscillator(), gL = ctx.createGain();
+        oscL.frequency.value = 200; oscL.type = 'sine'; gL.gain.value = 1;
+        oscL.connect(gL); gL.connect(merger, 0, 0); oscL.start();
+        const oscR = ctx.createOscillator(), gR = ctx.createGain();
+        oscR.frequency.value = 207.83; oscR.type = 'sine'; gR.gain.value = 1;
+        oscR.connect(gR); gR.connect(merger, 0, 1); oscR.start();
+        entrainNodes = { type:'binaural', oscL, oscR, master };
       } else {
-        stopEntrainment();
+        const osc = ctx.createOscillator(), lfo = ctx.createOscillator();
+        const lfoG = ctx.createGain(), ampG = ctx.createGain();
+        osc.frequency.value = 200; osc.type = 'sine';
+        lfo.frequency.value = 7.83; lfo.type = 'sine';
+        lfoG.gain.value = 0.5; lfo.connect(lfoG); ampG.gain.value = 0.5;
+        lfoG.connect(ampG.gain); osc.connect(ampG); ampG.connect(master);
+        osc.start(); lfo.start();
+        entrainNodes = { type:'iso', osc, lfo, master };
       }
-    });
+    } catch(e) {}
+  }
+  function stopEntrainment() {
+    if (!entrainNodes) return;
+    try {
+      if (entrainNodes.type === 'binaural') { entrainNodes.oscL.stop(); entrainNodes.oscR.stop(); }
+      else { entrainNodes.osc.stop(); entrainNodes.lfo.stop(); }
+      entrainNodes.master.disconnect();
+    } catch(e) {}
+    entrainNodes = null;
+  }
+  function updateEntrainVol() {
+    if (!entrainNodes) return;
+    try { entrainNodes.master.gain.setValueAtTime(entrainVol.value/100*0.4, getAudioCtx().currentTime); } catch(e) {}
+  }
+  entrainToggle.addEventListener('change', function() {
+    entrainEnabled = this.checked;
+    entrainBody.classList.toggle('open', entrainEnabled);
+    if (entrainEnabled) { getAudioCtx(); if (stdRunning || s111Running || whRunning) startEntrainment(); }
+    else stopEntrainment();
+  });
+  [tabBinaural, tabIso].forEach(tab => tab.addEventListener('click', () => {
+    entrainMode = tab === tabBinaural ? 'binaural' : 'iso';
+    tabBinaural.classList.toggle('active', entrainMode === 'binaural');
+    tabIso.classList.toggle('active', entrainMode === 'iso');
+    entrainHint.innerHTML = ENTRAIN_HINTS[entrainMode];
+    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+  }));
+  entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
 
-    [tabBinaural, tabIso].forEach(tab => {
-      tab.addEventListener('click', () => {
-        entrainMode = tab === tabBinaural ? 'binaural' : 'iso';
-        tabBinaural.classList.toggle('active', entrainMode === 'binaural');
-        tabIso.classList.toggle('active', entrainMode === 'iso');
-        entrainHint.innerHTML = ENTRAIN_HINTS[entrainMode];
-        if (running && entrainEnabled) startEntrainment();
-      });
-    });
-
-    entrainVol.addEventListener('input', () => {
-      entrainVolVal.textContent = entrainVol.value + '%';
-      updateEntrainVolume();
-    });
-
-    // ─── WakeLock ──────────────────────────────────────────────────────────────
-    let wakeLock = null;
-
-    async function acquireWakeLock() {
-      if (!('wakeLock' in navigator)) return;
-      try {
-        wakeLock = await navigator.wakeLock.request('screen');
-        wakeLock.addEventListener('release', () => { wakeLock = null; });
-      } catch(e) {}
-    }
-
-    function releaseWakeLock() {
-      if (wakeLock) { wakeLock.release(); wakeLock = null; }
-    }
-
-    // ─── Core tick ────────────────────────────────────────────────────────────
-    function startPhase(idx) {
-      phaseIdx = idx;
-      const phases = MODES[currentMode].phases;
-      const phase  = phases[idx];
-      secondsLeft  = phase.secs;
-
-      doVibrate([100]);
-      playTone(PHASE_TONE[phase.key] || 440);
-      progressArc.style.transition = 'stroke 0.4s';
-      updateDisplay(phase, secondsLeft, phase.secs);
-    }
-
-    function tick() {
-      secondsLeft--;
-      const phase = MODES[currentMode].phases[phaseIdx];
-      updateDisplay(phase, secondsLeft, phase.secs);
-
-      if (secondsLeft <= 0) {
-        const phases = MODES[currentMode].phases;
-        const next = (phaseIdx + 1) % phases.length;
-        if (next === 0) {
-          cycleCount++;
-          cycleEl.textContent = cycleCount;
-          doVibrate([100, 80, 100, 80, 100]);
-
-          const goal = SCENARIOS[currentScenario].cycles;
-          if (goal > 0 && cycleCount >= goal) {
-            clearInterval(ticker);
-            running = false;
-            startBtn.textContent = '開始';
-            showComplete();
-            return;
-          }
-        }
-        startPhase(next);
+  // ─── Scenario ─────────────────────────────────────────────────────────────
+  function applyScenario(key) {
+    currentScenario = key;
+    const sc = SCENARIOS[key];
+    scenarioHint.textContent = sc.hint;
+    if (sc.mode && (currentMode === '478' || currentMode === 'box')) {
+      if (sc.mode !== currentMode) {
+        modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === sc.mode));
+        currentMode = sc.mode;
+        buildPhaseStrip(sc.mode);
+        tipText.textContent = STD_MODES[sc.mode].tip;
+        stdReset();
       }
     }
+    cycleGoalEl.textContent = sc.cycles > 0 ? ` / ${sc.cycles}` : '';
+  }
+  scenarioSelect.addEventListener('change', () => { stdReset(); applyScenario(scenarioSelect.value); });
 
-    // ─── Controls ─────────────────────────────────────────────────────────────
-    function startResume() {
-      if (running) return;
-      running = true;
-      startBtn.textContent = '暫停';
-      startBtn.classList.add('primary');
-      acquireWakeLock();
-      startEntrainment();
-
-      if (secondsLeft === 0) startPhase(0);
-      ticker = setInterval(tick, 1000);
-    }
-
-    function pause() {
-      if (!running) return;
-      running = false;
-      clearInterval(ticker);
-      startBtn.textContent = '繼續';
-      releaseWakeLock();
-      stopEntrainment();
-      const phase = MODES[currentMode].phases[phaseIdx];
-      const fraction = 1 - (secondsLeft / phase.secs);
-      progressArc.style.transition = 'none';
-      setArcProgress(fraction, MODES[currentMode].arcColor[phase.key]);
-    }
-
-    function reset() {
-      if (running) pause();
-      running = false;
-      phaseIdx = 0;
-      secondsLeft = 0;
-      cycleCount = 0;
-      cycleEl.textContent = 0;
-      startBtn.textContent = '開始';
-      phaseLabel.textContent = '準備';
-      countdown.textContent  = '—';
-      setBodyPhase('idle');
-      progressArc.style.transition = 'none';
-      setArcProgress(0, '#58a6ff');
-    }
-
-    // 顯示 vibrate 支援狀態
-    document.getElementById('vibSupport').textContent = ('vibrate' in navigator) ? 'true' : 'false';
-
-    startBtn.addEventListener('click', () => {
-      navigator.vibrate(200);
-      if (soundEnabled) getAudioCtx();
-      if (running) pause(); else startResume();
-    });
-
-    document.getElementById('testVibBtn').addEventListener('click', () => {
-      navigator.vibrate([200, 100, 200]);
-    });
-
-    resetBtn.addEventListener('click', reset);
-
-    // ─── Mode switching ───────────────────────────────────────────────────────
-    modeTabs.forEach(tab => {
-      tab.addEventListener('click', () => {
-        if (tab.dataset.mode === currentMode) return;
-        reset();
-        currentMode = tab.dataset.mode;
-        syncModeTab(currentMode);
-        buildPhaseStrip(currentMode);
-        // 手動切換模式時清除情境限制
-        if (SCENARIOS[currentScenario].mode) {
-          scenarioSelect.value = 'free';
-          applyScenario('free');
+  // ─── Standard mode ────────────────────────────────────────────────────────
+  function buildPhaseStrip(mode) {
+    phaseStrip.innerHTML = STD_MODES[mode].phases
+      .map(p => `<div class="phase-chip">${p.label} ${p.secs}s</div>`).join('');
+  }
+  function stdUpdateDisplay(phase, secs, total) {
+    phaseLabel.textContent = phase.label;
+    countdown.textContent  = secs;
+    setArc(progressArc, 1 - secs/total, STD_MODES[currentMode].arcColor[phase.key]);
+    setBodyPhase(phase.key);
+  }
+  function stdStartPhase(idx) {
+    stdPhaseIdx = idx;
+    const ph = STD_MODES[currentMode].phases[idx];
+    stdSecsLeft = ph.secs;
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    progressArc.style.transition = 'stroke 0.4s';
+    stdUpdateDisplay(ph, stdSecsLeft, ph.secs);
+  }
+  function stdTick() {
+    stdSecsLeft--;
+    const ph = STD_MODES[currentMode].phases[stdPhaseIdx];
+    stdUpdateDisplay(ph, stdSecsLeft, ph.secs);
+    if (stdSecsLeft <= 0) {
+      const next = (stdPhaseIdx + 1) % STD_MODES[currentMode].phases.length;
+      if (next === 0) {
+        stdCycleCount++;
+        cycleCountEl.textContent = stdCycleCount;
+        doVibrate([100,80,100,80,100]);
+        const goal = SCENARIOS[currentScenario].cycles;
+        if (goal > 0 && stdCycleCount >= goal) {
+          clearInterval(stdTicker); stdTicker = null; stdRunning = false;
+          startBtn.textContent = '開始';
+          showStdComplete(); return;
         }
-      });
-    });
-
-    // ─── Init ─────────────────────────────────────────────────────────────────
-    buildPhaseStrip(currentMode);
-    applyScenario('free');
-
-    // ─── Service Worker ───────────────────────────────────────────────────────
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
+      }
+      stdStartPhase(next);
     }
+  }
+  function stdStart() {
+    if (stdRunning) return;
+    stdRunning = true; startBtn.textContent = '暫停';
+    acquireWakeLock(); startEntrainment();
+    if (stdSecsLeft === 0) stdStartPhase(0);
+    stdTicker = setInterval(stdTick, 1000);
+  }
+  function stdPause() {
+    if (!stdRunning) return;
+    stdRunning = false; clearInterval(stdTicker); stdTicker = null;
+    startBtn.textContent = '繼續';
+    releaseWakeLock(); stopEntrainment();
+    const ph = STD_MODES[currentMode].phases[stdPhaseIdx];
+    progressArc.style.transition = 'none';
+    setArc(progressArc, 1 - stdSecsLeft/ph.secs, STD_MODES[currentMode].arcColor[ph.key]);
+  }
+  function stdReset() {
+    if (stdRunning) stdPause();
+    stdPhaseIdx = 0; stdSecsLeft = 0; stdCycleCount = 0;
+    cycleCountEl.textContent = 0; startBtn.textContent = '開始';
+    phaseLabel.textContent = '準備'; countdown.textContent = '—';
+    setBodyPhase('idle'); progressArc.style.transition = 'none';
+    setArc(progressArc, 0, '#58a6ff');
+  }
+  function showStdComplete() {
+    const sc = SCENARIOS[currentScenario];
+    document.getElementById('completeIcon').textContent  = sc.icon;
+    document.getElementById('completeTitle').textContent = sc.title;
+    document.getElementById('completeMsg').textContent   = sc.msg;
+    document.getElementById('completeCycles').textContent = `已完成 ${stdCycleCount} 個循環`;
+    completeScreen.classList.add('show');
+    releaseWakeLock(); stopEntrainment();
+    doVibrate([100,80,100,80,200]);
+  }
+
+  startBtn.addEventListener('click', () => {
+    navigator.vibrate(200);
+    if (soundEnabled) getAudioCtx();
+    if (stdRunning) stdPause(); else stdStart();
+  });
+  resetBtn.addEventListener('click', stdReset);
+
+  document.getElementById('restartBtn').addEventListener('click', () => {
+    completeScreen.classList.remove('show'); stdReset();
+  });
+  document.getElementById('completeResetBtn').addEventListener('click', () => {
+    completeScreen.classList.remove('show');
+    scenarioSelect.value = 'free'; applyScenario('free'); stdReset();
+  });
+
+  // ─── 111 Mode ─────────────────────────────────────────────────────────────
+  function show111Section(name) {
+    panel111Guide.style.display    = name === 'guide'    ? 'flex' : 'none';
+    panel111Exercise.style.display = name === 'exercise' ? 'flex' : 'none';
+    panel111Complete.style.display = name === 'complete' ? 'flex' : 'none';
+  }
+
+  function showStep(n) {
+    guideStep = Math.max(0, Math.min(n, stepCards.length - 1));
+    stepCards.forEach((c, i) => c.classList.toggle('active', i === guideStep));
+    stepDots.forEach((d, i) => d.classList.toggle('active', i === guideStep));
+    step111Prev.disabled = guideStep === 0;
+    step111Next.textContent = guideStep === stepCards.length - 1 ? '開始練習' : '下一步';
+  }
+  showStep(0);
+
+  step111Prev.addEventListener('click', () => showStep(guideStep - 1));
+  step111Next.addEventListener('click', () => {
+    if (guideStep < stepCards.length - 1) { showStep(guideStep + 1); }
+    else {
+      show111Section('exercise');
+      s111Reset(false); // reset counters but don't go back to guide
+    }
+  });
+
+  function s111UpdateDisplay(ph, secs, total) {
+    phaseLabel111.textContent = ph.label;
+    countdown111.textContent  = secs;
+    setArc(progressArc111, 1 - secs/total, ARC_COLOR_111[ph.key]);
+    setBodyPhase(ph.key);
+  }
+  function s111StartPhase(idx) {
+    s111PhaseIdx = idx;
+    const ph = PHASES_111[idx];
+    s111SecsLeft = ph.secs;
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    progressArc111.style.transition = 'stroke 0.4s';
+    s111UpdateDisplay(ph, s111SecsLeft, ph.secs);
+  }
+  function s111Tick() {
+    s111SecsLeft--;
+    const ph = PHASES_111[s111PhaseIdx];
+    s111UpdateDisplay(ph, s111SecsLeft, ph.secs);
+    if (s111SecsLeft <= 0) {
+      const next = (s111PhaseIdx + 1) % PHASES_111.length;
+      if (next === 0) {
+        s111BreathCount++;
+        count111El.textContent = s111BreathCount;
+        doVibrate([80,60,80]);
+        if (s111BreathCount >= 111) {
+          clearInterval(s111Ticker); s111Ticker = null; s111Running = false;
+          startBtn111.textContent = '開始';
+          s111Complete(); return;
+        }
+      }
+      s111StartPhase(next);
+    }
+  }
+  function s111Start() {
+    if (s111Running) return;
+    s111Running = true; startBtn111.textContent = '暫停';
+    acquireWakeLock(); startEntrainment();
+    if (s111SecsLeft === 0) s111StartPhase(0);
+    s111Ticker = setInterval(s111Tick, 1000);
+  }
+  function s111Pause() {
+    if (!s111Running) return;
+    s111Running = false; clearInterval(s111Ticker); s111Ticker = null;
+    startBtn111.textContent = '繼續';
+    releaseWakeLock(); stopEntrainment();
+    const ph = PHASES_111[s111PhaseIdx];
+    progressArc111.style.transition = 'none';
+    setArc(progressArc111, 1 - s111SecsLeft/ph.secs, ARC_COLOR_111[ph.key]);
+  }
+  function s111Reset(backToGuide = true) {
+    if (s111Running) s111Pause();
+    s111PhaseIdx = 0; s111SecsLeft = 0; s111BreathCount = 0;
+    count111El.textContent = 0; startBtn111.textContent = '開始';
+    phaseLabel111.textContent = '準備'; countdown111.textContent = '—';
+    setBodyPhase('idle'); progressArc111.style.transition = 'none';
+    setArc(progressArc111, 0, '#58a6ff');
+    if (backToGuide) show111Section('guide');
+  }
+  function s111Complete() {
+    show111Section('complete');
+    rubCount = 0; rubCountEl.textContent = 0; rubDone.classList.remove('show');
+    releaseWakeLock(); stopEntrainment(); setBodyPhase('idle');
+    doVibrate([200,100,200,100,200]);
+  }
+
+  startBtn111.addEventListener('click', () => {
+    navigator.vibrate(200);
+    if (soundEnabled) getAudioCtx();
+    if (s111Running) s111Pause(); else s111Start();
+  });
+  resetBtn111.addEventListener('click', () => s111Reset(true));
+  rubBtn.addEventListener('click', () => {
+    if (rubCount >= 36) return;
+    rubCount++; rubCountEl.textContent = rubCount;
+    navigator.vibrate(50);
+    if (rubCount >= 36) { rubDone.classList.add('show'); navigator.vibrate([100,50,200]); }
+  });
+  restart111Btn.addEventListener('click', () => { s111Reset(true); showStep(0); });
+
+  // ─── Wim Hof Mode ─────────────────────────────────────────────────────────
+  const WH_INHALE_MS = 800, WH_EXHALE_MS = 700;
+
+  function showWhSection(name) {
+    whPanelSafety.style.display   = name === 'safety'   ? 'flex' : 'none';
+    whPanelExercise.style.display = name === 'exercise'  ? 'flex' : 'none';
+  }
+  function showWhPhase(name) {
+    ['p1','p2','p3','rounddone','alldone'].forEach(p => {
+      document.getElementById(`wh-${p}`).style.display = 'none';
+    });
+    const el = document.getElementById(`wh-${name}`);
+    if (el) el.style.display = 'flex';
+  }
+
+  startWimhofBtn.addEventListener('click', () => {
+    showWhSection('exercise');
+    whRound = 0; whRoundNumEl.textContent = 0;
+    startWhRound();
+  });
+
+  function startWhRound() {
+    whBreathCount = 0; whBreathPhase = 'inhale';
+    whBreathNumEl.textContent = 0;
+    showWhPhase('p1');
+    whStartBtn.textContent = '開始';
+    progressArcWh.style.transition = 'none';
+    setArc(progressArcWh, 0, '#58a6ff');
+    setBodyPhase('idle');
+  }
+
+  function whStartPowerBreathing() {
+    if (whRunning) return;
+    whRunning = true; whStartBtn.textContent = '暫停';
+    acquireWakeLock(); startEntrainment();
+    whBreathStart = null;
+    whBreathAnimId = requestAnimationFrame(whBreathFrame);
+  }
+  function whPausePowerBreathing() {
+    if (!whRunning) return;
+    whRunning = false; whStartBtn.textContent = '繼續';
+    if (whBreathAnimId) { cancelAnimationFrame(whBreathAnimId); whBreathAnimId = null; }
+    releaseWakeLock(); stopEntrainment();
+    setBodyPhase('idle');
+  }
+
+  function whBreathFrame(ts) {
+    if (!whBreathStart) whBreathStart = ts;
+    const elapsed = ts - whBreathStart;
+    const dur = whBreathPhase === 'inhale' ? WH_INHALE_MS : WH_EXHALE_MS;
+    const frac = Math.min(elapsed / dur, 1);
+
+    if (whBreathPhase === 'inhale') {
+      setArc(progressArcWh, frac, '#58a6ff');
+      setBodyPhase('inhale');
+      phaseLabelWh.textContent = '吸氣';
+    } else {
+      setArc(progressArcWh, 1 - frac, '#3fb950');
+      setBodyPhase('exhale');
+      phaseLabelWh.textContent = '呼氣';
+    }
+
+    if (frac >= 1) {
+      if (whBreathPhase === 'inhale') {
+        whBreathPhase = 'exhale';
+      } else {
+        whBreathPhase = 'inhale';
+        whBreathCount++;
+        whBreathNumEl.textContent = whBreathCount;
+        doVibrate([40]);
+        if (whBreathCount >= 25) {
+          cancelAnimationFrame(whBreathAnimId); whBreathAnimId = null;
+          whRunning = false; whStartBtn.textContent = '開始';
+          releaseWakeLock(); stopEntrainment();
+          setTimeout(startWhHold, 300);
+          return;
+        }
+      }
+      whBreathStart = ts;
+    }
+    whBreathAnimId = requestAnimationFrame(whBreathFrame);
+  }
+
+  function startWhHold() {
+    showWhPhase('p2');
+    setBodyPhase('idle');
+    let holdTime = 60;
+    whHoldTimerEl.textContent = holdTime;
+    doVibrate([200]);
+    whHoldTicker = setInterval(() => {
+      holdTime--;
+      whHoldTimerEl.textContent = holdTime;
+      if (holdTime <= 0) { clearInterval(whHoldTicker); startWhRecovery(); }
+    }, 1000);
+  }
+
+  whGiveUpBtn.addEventListener('click', () => {
+    if (whHoldTicker) { clearInterval(whHoldTicker); whHoldTicker = null; }
+    startWhRecovery();
+  });
+
+  function startWhRecovery() {
+    showWhPhase('p3');
+    setBodyPhase('inhale');
+    let recTime = 15;
+    whRecovTimerEl.textContent = recTime;
+    doVibrate([200]);
+    acquireWakeLock();
+    whRecovTicker = setInterval(() => {
+      recTime--;
+      whRecovTimerEl.textContent = recTime;
+      if (recTime <= 0) { clearInterval(whRecovTicker); whRecovTicker = null; endWhRound(); }
+    }, 1000);
+  }
+
+  function endWhRound() {
+    whRound++;
+    whRoundNumEl.textContent = whRound;
+    setBodyPhase('idle');
+    releaseWakeLock(); stopEntrainment();
+    doVibrate([100,80,100,80,200]);
+    if (whRound >= 4) {
+      showWhPhase('alldone');
+    } else {
+      whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`;
+      showWhPhase('rounddone');
+    }
+  }
+
+  function stopWhAll() {
+    whRunning = false;
+    if (whBreathAnimId) { cancelAnimationFrame(whBreathAnimId); whBreathAnimId = null; }
+    if (whHoldTicker)  { clearInterval(whHoldTicker); whHoldTicker = null; }
+    if (whRecovTicker) { clearInterval(whRecovTicker); whRecovTicker = null; }
+  }
+
+  function whFullReset() {
+    stopWhAll();
+    whRound = 0; whBreathCount = 0; whBreathPhase = 'inhale';
+    whRoundNumEl.textContent = 0;
+    showWhSection('safety');
+    setBodyPhase('idle');
+  }
+
+  whStartBtn.addEventListener('click', () => {
+    navigator.vibrate(200);
+    if (soundEnabled) getAudioCtx();
+    if (whRunning) whPausePowerBreathing(); else whStartPowerBreathing();
+  });
+  whResetBtn.addEventListener('click', () => { stopWhAll(); startWhRound(); whRound = 0; whRoundNumEl.textContent = 0; });
+  whNextRoundBtn.addEventListener('click', startWhRound);
+  whFinishBtn.addEventListener('click', () => { showWhPhase('alldone'); whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`; whRound = 4; whRoundNumEl.textContent = 4; showWhPhase('alldone'); });
+  whRestartBtn.addEventListener('click', whFullReset);
+
+  // ─── Mode tab switching ───────────────────────────────────────────────────
+  modeTabs.forEach(tab => tab.addEventListener('click', () => {
+    if (tab.dataset.mode === currentMode) return;
+    switchMode(tab.dataset.mode);
+  }));
+
+  // ─── Shared debug controls ────────────────────────────────────────────────
+  document.getElementById('vibSupport').textContent = ('vibrate' in navigator) ? 'true' : 'false';
+  document.getElementById('testVibBtn').addEventListener('click', () => navigator.vibrate([200,100,200]));
+
+  // ─── Init ─────────────────────────────────────────────────────────────────
+  buildPhaseStrip('478');
+  applyScenario('free');
+  showView('standard');
+  showStep(0);
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   </script>
 </body>
 </html>
