@@ -28,9 +28,19 @@
       display: flex; flex-direction: column; align-items: center;
       justify-content: flex-start; overflow-x: hidden;
     }
-    body { padding: 20px 16px 40px; gap: 16px; }
+    body { padding: 14px 16px 40px; gap: 12px; }
 
-    h1 { font-size: 1.2rem; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+    /* Top bar: title + all toggles in one row */
+    .top-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; max-width: 340px;
+    }
+    .top-bar h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
+    .top-controls { display: flex; align-items: center; gap: 10px; }
+    .top-controls .tog-label { font-size: 0.72rem; gap: 4px; }
+    .top-controls .tog-pill { width: 34px; height: 20px; border-radius: 10px; }
+    .top-controls .tog-pill::after { width: 14px; height: 14px; top: 3px; left: 3px; }
+    .top-controls .tog-label input:checked + .tog-pill::after { transform: translateX(14px); }
 
     /* Scenario / Mode selects */
     .scenario-select, .mode-select {
@@ -65,7 +75,7 @@
 
     /* Arena */
     .arena {
-      position: relative; width: min(72vw, 260px); height: min(72vw, 260px);
+      position: relative; width: min(62vw, 230px); height: min(62vw, 230px);
       display: flex; align-items: center; justify-content: center;
     }
     .ring-bg { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--border); }
@@ -121,12 +131,9 @@
     .tog-label input:checked + .tog-pill { background: var(--accent); }
     .tog-label input:checked + .tog-pill::after { transform: translateX(18px); }
 
-    /* Entrainment */
-    .entrain-panel { width: 100%; max-width: 340px; background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; overflow: hidden; }
-    .entrain-header { display: flex; align-items: center; justify-content: space-between; padding: 13px 16px; background: rgba(88,166,255,0.08); }
-    .entrain-header span { font-size: 0.9rem; color: var(--text); font-weight: 500; }
-    .entrain-body { display: none; flex-direction: column; gap: 12px; padding: 0 16px 16px; border-top: 1px solid var(--border); }
-    .entrain-body.open { display: flex; }
+    /* Entrainment panel — body only, no header (toggle is in top-bar) */
+    .entrain-panel { display: none; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; }
+    .entrain-panel.open { display: flex; }
     .entrain-hint { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
     .entrain-hint b { color: var(--accent); }
     .vol-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
@@ -200,41 +207,46 @@
 </head>
 <body class="idle">
 
-  <h1>呼吸節拍器</h1>
-
-  <div class="entrain-panel">
-    <div class="entrain-header">
-      <span>🎵 調頻音</span>
-      <label class="tog-label" style="margin:0">
-        <input type="checkbox" id="entrainToggle" /><span class="tog-pill"></span>
+  <div class="top-bar">
+    <h1>呼吸節拍器</h1>
+    <div class="top-controls">
+      <label class="tog-label" title="調頻音">
+        <input type="checkbox" id="entrainToggle" /><span class="tog-pill"></span><span>🎵</span>
+      </label>
+      <label class="tog-label">
+        <input type="checkbox" id="vibToggle" /><span class="tog-pill"></span><span>震動</span>
+      </label>
+      <label class="tog-label">
+        <input type="checkbox" id="soundToggle" /><span class="tog-pill"></span><span>聲音</span>
       </label>
     </div>
-    <div class="entrain-body" id="entrainBody">
-      <div class="entrain-row">
-        <label>頻率</label>
-        <select id="entrainFreq">
-          <option value="7.83">7.83Hz — Schumann 地球共振</option>
-          <option value="10">10Hz — Alpha 波：放鬆冥想</option>
-          <option value="40">40Hz — Gamma 波：專注思維</option>
-          <option value="4">4Hz — Theta 波：深度冥想</option>
-          <option value="1">1Hz — Delta 波：深睡修復</option>
-        </select>
-      </div>
-      <div class="entrain-row">
-        <label>模式</label>
-        <select id="entrainModeSelect">
-          <option value="binaural">雙耳節拍（需耳機）</option>
-          <option value="iso">等響節拍（免耳機）</option>
-        </select>
-      </div>
-      <p class="entrain-hint" id="entrainHint">
-        <b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。
-      </p>
-      <div class="vol-row">
-        <span>音量</span>
-        <input type="range" id="entrainVol" min="0" max="100" value="30" />
-        <span id="entrainVolVal">30%</span>
-      </div>
+  </div>
+
+  <div class="entrain-panel" id="entrainBody">
+    <div class="entrain-row">
+      <label>頻率</label>
+      <select id="entrainFreq">
+        <option value="7.83">7.83Hz — Schumann 地球共振</option>
+        <option value="10">10Hz — Alpha 波：放鬆冥想</option>
+        <option value="40">40Hz — Gamma 波：專注思維</option>
+        <option value="4">4Hz — Theta 波：深度冥想</option>
+        <option value="1">1Hz — Delta 波：深睡修復</option>
+      </select>
+    </div>
+    <div class="entrain-row">
+      <label>模式</label>
+      <select id="entrainModeSelect">
+        <option value="binaural">雙耳節拍（需耳機）</option>
+        <option value="iso">等響節拍（免耳機）</option>
+      </select>
+    </div>
+    <p class="entrain-hint" id="entrainHint">
+      <b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。
+    </p>
+    <div class="vol-row">
+      <span>音量</span>
+      <input type="range" id="entrainVol" min="0" max="100" value="30" />
+      <span id="entrainVolVal">30%</span>
     </div>
   </div>
 
@@ -423,21 +435,6 @@
         <button class="btn" id="whRestartBtn">重新開始</button>
       </div>
     </div>
-  </div>
-
-  <!-- ── Shared bottom controls ── -->
-  <div class="controls">
-    <button class="btn" id="testVibBtn">測試震動</button>
-  </div>
-  <p style="font-size:0.8rem;color:var(--muted)">vibrate 支援：<span id="vibSupport" style="color:var(--text);font-weight:600"></span></p>
-
-  <div class="toggles">
-    <label class="tog-label">
-      <input type="checkbox" id="vibToggle" /><span class="tog-pill"></span><span>震動</span>
-    </label>
-    <label class="tog-label">
-      <input type="checkbox" id="soundToggle" /><span class="tog-pill"></span><span>聲音</span>
-    </label>
   </div>
 
   <p class="tip" id="tipText"></p>
@@ -1120,9 +1117,6 @@
   whFinishBtn.addEventListener('click', () => { showWhPhase('alldone'); whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`; whRound = 4; whRoundNumEl.textContent = 4; showWhPhase('alldone'); });
   whRestartBtn.addEventListener('click', whFullReset);
 
-  // ─── Shared debug controls ────────────────────────────────────────────────
-  document.getElementById('vibSupport').textContent = ('vibrate' in navigator) ? 'true' : 'false';
-  document.getElementById('testVibBtn').addEventListener('click', () => navigator.vibrate([200,100,200]));
 
   // ─── Init ─────────────────────────────────────────────────────────────────
   buildPhaseStrip('478');
