@@ -1118,12 +1118,6 @@
   whFinishBtn.addEventListener('click', () => { showWhPhase('alldone'); whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`; whRound = 4; whRoundNumEl.textContent = 4; showWhPhase('alldone'); });
   whRestartBtn.addEventListener('click', whFullReset);
 
-  // ─── Mode tab switching ───────────────────────────────────────────────────
-  modeTabs.forEach(tab => tab.addEventListener('click', () => {
-    if (tab.dataset.mode === currentMode) return;
-    switchMode(tab.dataset.mode);
-  }));
-
   // ─── Shared debug controls ────────────────────────────────────────────────
   document.getElementById('vibSupport').textContent = ('vibrate' in navigator) ? 'true' : 'false';
   document.getElementById('testVibBtn').addEventListener('click', () => navigator.vibrate([200,100,200]));
