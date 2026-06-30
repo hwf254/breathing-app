@@ -225,7 +225,7 @@
   <div class="mode-tabs">
     <button class="mode-tab active" data-mode="478">4-7-8 呼吸法</button>
     <button class="mode-tab" data-mode="box">Box 4-4-4-4</button>
-    <button class="mode-tab" data-mode="coherent">5-5 相干呼吸</button>
+    <button class="mode-tab" data-mode="coherent">5-5-5 相干呼吸</button>
     <button class="mode-tab" data-mode="111">111 呼吸法</button>
     <button class="mode-tab" data-mode="wimhof">🧊 冰人呼吸</button>
   </div>
@@ -456,7 +456,7 @@
     meditate: { mode: 'box', cycles: 5, hint: '讓心智進入穩定中性狀態，適合冥想前使用', icon: '🧘', title: '調頻完成', msg: '心智已準備好進入冥想。\n保持這份靜定，繼續深入。' },
     focus:    { mode: 'box', cycles: 3, hint: '平衡自律神經，提升注意力與清醒度', icon: '🎯', title: '專注已就緒', msg: '神經系統已平衡，注意力清晰。\n現在是投入工作的好時機。' },
     morning:  { mode: 'box', cycles: 4, hint: '喚醒身心，為今天設定穩定的基調', icon: '🌅', title: '早晨啟動完成', msg: '身心已醒來，今天有個好的開始。\n帶著這份穩定迎接新的一天。' },
-    daily:    { mode: 'coherent', cycles: 10, hint: '每天練習可改善自律神經平衡，提升心跳變異率，每分鐘恰好 6 次呼吸達到最佳共振狀態', icon: '💓', title: '日常調節完成', msg: '心律已進入共振狀態。\n持之以恆，自律神經將逐漸趨於平衡。' },
+    daily:    { mode: 'coherent', cycles: 10, hint: '吸氣 5 秒、屏氣 5 秒、呼氣 5 秒，均勻節奏改善自律神經平衡，提升心跳變異率', icon: '💓', title: '日常調節完成', msg: '心律已進入共振狀態。\n持之以恆，自律神經將逐漸趨於平衡。' },
   };
 
   // ─── Standard breathing modes ─────────────────────────────────────────────
@@ -483,10 +483,11 @@
     'coherent': {
       phases: [
         { key: 'inhale', label: '吸氣', secs: 5 },
+        { key: 'hold',   label: '屏氣', secs: 5 },
         { key: 'exhale', label: '呼氣', secs: 5 },
       ],
-      tip: '5-5 相干呼吸每分鐘恰好 6 次，達到心肺共振最佳狀態，提升心跳變異率。',
-      arcColor: { inhale:'#58a6ff', exhale:'#3fb950' },
+      tip: '5-5-5 相干呼吸每循環 15 秒，透過均勻的吸、屏、呼節奏提升心跳變異率與自律神經平衡。',
+      arcColor: { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' },
     },
   };
 
