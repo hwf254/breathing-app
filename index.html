@@ -32,8 +32,8 @@
 
     h1 { font-size: 1.2rem; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
 
-    /* Scenario select */
-    .scenario-select {
+    /* Scenario / Mode selects */
+    .scenario-select, .mode-select {
       width: 100%; max-width: 340px; padding: 10px 14px;
       background: var(--surface); border: 1px solid var(--border);
       border-radius: 10px; color: var(--text); font-size: 0.95rem; cursor: pointer;
@@ -41,24 +41,20 @@
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
       background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px;
     }
-    .scenario-select:focus { outline: none; border-color: var(--accent); }
+    .scenario-select:focus, .mode-select:focus { outline: none; border-color: var(--accent); }
     .scenario-hint { font-size: 0.8rem; color: var(--accent); text-align: center; max-width: 300px; line-height: 1.6; min-height: 1em; }
 
-    /* Mode tabs — 2×2 grid */
-    .mode-tabs {
-      display: flex; flex-wrap: wrap; gap: 4px; padding: 4px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 12px; width: 100%; max-width: 340px;
+    /* Entrain freq/mode row */
+    .entrain-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
+    .entrain-row label { white-space: nowrap; }
+    .entrain-row select {
+      flex: 1; padding: 6px 10px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.8rem; cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px;
     }
-    .mode-tab {
-      flex: 1 0 calc(50% - 6px); padding: 9px 6px; border: none;
-      border-radius: 8px; background: transparent; color: var(--muted);
-      font-size: 0.8rem; font-weight: 500; cursor: pointer;
-      transition: background 0.2s, color 0.2s; line-height: 1.3; text-align: center;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .mode-tab.active { background: var(--accent); color: #fff; }
-    .mode-tab:not(.active):hover { background: var(--border); color: var(--text); }
+    .entrain-row select:focus { outline: none; border-color: var(--accent); }
 
     /* View containers */
     .view { display: flex; flex-direction: column; align-items: center; gap: 16px; width: 100%; max-width: 340px; }
@@ -131,9 +127,6 @@
     .entrain-header span { font-size: 0.85rem; color: var(--muted); }
     .entrain-body { display: none; flex-direction: column; gap: 12px; padding: 0 16px 16px; border-top: 1px solid var(--border); }
     .entrain-body.open { display: flex; }
-    .entrain-mode-tabs { display: flex; gap: 6px; }
-    .entrain-tab { flex: 1; padding: 8px 6px; border: 1px solid var(--border); border-radius: 8px; background: transparent; color: var(--muted); font-size: 0.78rem; cursor: pointer; text-align: center; line-height: 1.4; transition: background 0.15s, color 0.15s; -webkit-tap-highlight-color: transparent; }
-    .entrain-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
     .entrain-hint { font-size: 0.75rem; color: var(--muted); line-height: 1.5; }
     .entrain-hint b { color: var(--accent); }
     .vol-row { display: flex; align-items: center; gap: 10px; font-size: 0.8rem; color: var(--muted); }
@@ -209,6 +202,42 @@
 
   <h1>呼吸節拍器</h1>
 
+  <div class="entrain-panel">
+    <div class="entrain-header">
+      <span>🎵 調頻音</span>
+      <label class="tog-label" style="margin:0">
+        <input type="checkbox" id="entrainToggle" /><span class="tog-pill"></span>
+      </label>
+    </div>
+    <div class="entrain-body" id="entrainBody">
+      <div class="entrain-row">
+        <label>頻率</label>
+        <select id="entrainFreq">
+          <option value="7.83">7.83Hz — Schumann 地球共振</option>
+          <option value="10">10Hz — Alpha 波：放鬆冥想</option>
+          <option value="40">40Hz — Gamma 波：專注思維</option>
+          <option value="4">4Hz — Theta 波：深度冥想</option>
+          <option value="1">1Hz — Delta 波：深睡修復</option>
+        </select>
+      </div>
+      <div class="entrain-row">
+        <label>模式</label>
+        <select id="entrainModeSelect">
+          <option value="binaural">雙耳節拍（需耳機）</option>
+          <option value="iso">等響節拍（免耳機）</option>
+        </select>
+      </div>
+      <p class="entrain-hint" id="entrainHint">
+        <b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。
+      </p>
+      <div class="vol-row">
+        <span>音量</span>
+        <input type="range" id="entrainVol" min="0" max="100" value="30" />
+        <span id="entrainVolVal">30%</span>
+      </div>
+    </div>
+  </div>
+
   <select class="scenario-select" id="scenarioSelect">
     <option value="free">自由練習</option>
     <option value="sleep">😴 睡前放鬆</option>
@@ -221,14 +250,13 @@
 
   <p class="scenario-hint" id="scenarioHint"></p>
 
-  <!-- Mode tabs — 2×2 -->
-  <div class="mode-tabs">
-    <button class="mode-tab active" data-mode="478">4-7-8 呼吸法</button>
-    <button class="mode-tab" data-mode="box">Box 4-4-4-4</button>
-    <button class="mode-tab" data-mode="coherent">5-5-5 相干呼吸</button>
-    <button class="mode-tab" data-mode="111">111 呼吸法</button>
-    <button class="mode-tab" data-mode="wimhof">🧊 冰人呼吸</button>
-  </div>
+  <select class="mode-select" id="modeSelect">
+    <option value="478">4-7-8 呼吸法</option>
+    <option value="box">Box 4-4-4-4</option>
+    <option value="coherent">5-5-5 相干呼吸</option>
+    <option value="111">111 呼吸法</option>
+    <option value="wimhof">🧊 冰人呼吸</option>
+  </select>
 
   <!-- ── Standard View (478, box) ── -->
   <div class="view" id="standardView">
@@ -412,29 +440,6 @@
     </label>
   </div>
 
-  <div class="entrain-panel">
-    <div class="entrain-header">
-      <span>🎵 調頻音（7.83Hz Schumann）</span>
-      <label class="tog-label" style="margin:0">
-        <input type="checkbox" id="entrainToggle" /><span class="tog-pill"></span>
-      </label>
-    </div>
-    <div class="entrain-body" id="entrainBody">
-      <div class="entrain-mode-tabs">
-        <button class="entrain-tab active" id="tabBinaural">雙耳節拍<br><small>需耳機</small></button>
-        <button class="entrain-tab" id="tabIso">等響節拍<br><small>免耳機</small></button>
-      </div>
-      <p class="entrain-hint" id="entrainHint">
-        <b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。建議佩戴耳機。
-      </p>
-      <div class="vol-row">
-        <span>音量</span>
-        <input type="range" id="entrainVol" min="0" max="100" value="30" />
-        <span id="entrainVolVal">30%</span>
-      </div>
-    </div>
-  </div>
-
   <p class="tip" id="tipText"></p>
 
   <!-- Standard mode complete overlay -->
@@ -520,7 +525,7 @@
   const bodyEl         = document.body;
   const scenarioSelect = document.getElementById('scenarioSelect');
   const scenarioHint   = document.getElementById('scenarioHint');
-  const modeTabs       = document.querySelectorAll('.mode-tab');
+  const modeSelect     = document.getElementById('modeSelect');
 
   // Standard
   const standardView = document.getElementById('standardView');
@@ -598,7 +603,7 @@
   function switchMode(mode) {
     stopAll();
     currentMode = mode;
-    modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    modeSelect.value = mode;
 
     if (mode === '478' || mode === 'box' || mode === 'coherent') {
       showView('standard');
@@ -673,37 +678,45 @@
   function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
 
   // ─── Entrainment ──────────────────────────────────────────────────────────
-  let entrainEnabled = false, entrainMode = 'binaural', entrainNodes = null;
-  const entrainToggle = document.getElementById('entrainToggle');
-  const entrainBody   = document.getElementById('entrainBody');
-  const tabBinaural   = document.getElementById('tabBinaural');
-  const tabIso        = document.getElementById('tabIso');
-  const entrainHint   = document.getElementById('entrainHint');
-  const entrainVol    = document.getElementById('entrainVol');
-  const entrainVolVal = document.getElementById('entrainVolVal');
+  let entrainEnabled = false, entrainNodes = null;
+  const entrainToggle    = document.getElementById('entrainToggle');
+  const entrainBody      = document.getElementById('entrainBody');
+  const entrainFreqSel   = document.getElementById('entrainFreq');
+  const entrainModeSel   = document.getElementById('entrainModeSelect');
+  const entrainHint      = document.getElementById('entrainHint');
+  const entrainVol       = document.getElementById('entrainVol');
+  const entrainVolVal    = document.getElementById('entrainVolVal');
+
   const ENTRAIN_HINTS = {
-    binaural: '<b>雙耳節拍</b>：左耳 200Hz、右耳 207.83Hz，大腦感知 7.83Hz 差頻。建議佩戴耳機。',
-    iso:      '<b>等響節拍</b>：200Hz 基礎音以 7.83Hz 速率脈衝調幅，免耳機也有效。',
+    binaural: '<b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。',
+    iso:      '<b>等響節拍</b>：基礎音以選定頻率脈衝調幅，免耳機也有效。',
   };
+
+  function updateEntrainHint() {
+    entrainHint.innerHTML = ENTRAIN_HINTS[entrainModeSel.value];
+  }
+
   function startEntrainment() {
     if (!entrainEnabled) return; stopEntrainment();
     try {
       const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
+      const beatHz = parseFloat(entrainFreqSel.value);
+      const carrier = 200;
       const master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
-      if (entrainMode === 'binaural') {
+      if (entrainModeSel.value === 'binaural') {
         const merger = ctx.createChannelMerger(2); merger.connect(master);
         const oscL = ctx.createOscillator(), gL = ctx.createGain();
-        oscL.frequency.value = 200; oscL.type = 'sine'; gL.gain.value = 1;
+        oscL.frequency.value = carrier; oscL.type = 'sine'; gL.gain.value = 1;
         oscL.connect(gL); gL.connect(merger, 0, 0); oscL.start();
         const oscR = ctx.createOscillator(), gR = ctx.createGain();
-        oscR.frequency.value = 207.83; oscR.type = 'sine'; gR.gain.value = 1;
+        oscR.frequency.value = carrier + beatHz; oscR.type = 'sine'; gR.gain.value = 1;
         oscR.connect(gR); gR.connect(merger, 0, 1); oscR.start();
         entrainNodes = { type:'binaural', oscL, oscR, master };
       } else {
         const osc = ctx.createOscillator(), lfo = ctx.createOscillator();
         const lfoG = ctx.createGain(), ampG = ctx.createGain();
-        osc.frequency.value = 200; osc.type = 'sine';
-        lfo.frequency.value = 7.83; lfo.type = 'sine';
+        osc.frequency.value = carrier; osc.type = 'sine';
+        lfo.frequency.value = beatHz; lfo.type = 'sine';
         lfoG.gain.value = 0.5; lfo.connect(lfoG); ampG.gain.value = 0.5;
         lfoG.connect(ampG.gain); osc.connect(ampG); ampG.connect(master);
         osc.start(); lfo.start();
@@ -730,13 +743,13 @@
     if (entrainEnabled) { getAudioCtx(); if (stdRunning || s111Running || whRunning) startEntrainment(); }
     else stopEntrainment();
   });
-  [tabBinaural, tabIso].forEach(tab => tab.addEventListener('click', () => {
-    entrainMode = tab === tabBinaural ? 'binaural' : 'iso';
-    tabBinaural.classList.toggle('active', entrainMode === 'binaural');
-    tabIso.classList.toggle('active', entrainMode === 'iso');
-    entrainHint.innerHTML = ENTRAIN_HINTS[entrainMode];
+  entrainFreqSel.addEventListener('change', () => {
     if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
-  }));
+  });
+  entrainModeSel.addEventListener('change', () => {
+    updateEntrainHint();
+    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+  });
   entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
 
   // ─── Scenario ─────────────────────────────────────────────────────────────
@@ -746,7 +759,7 @@
     scenarioHint.textContent = sc.hint;
     if (sc.mode && (currentMode === '478' || currentMode === 'box' || currentMode === 'coherent')) {
       if (sc.mode !== currentMode) {
-        modeTabs.forEach(t => t.classList.toggle('active', t.dataset.mode === sc.mode));
+        modeSelect.value = sc.mode;
         currentMode = sc.mode;
         buildPhaseStrip(sc.mode);
         tipText.textContent = STD_MODES[sc.mode].tip;
@@ -756,6 +769,7 @@
     cycleGoalEl.textContent = sc.cycles > 0 ? ` / ${sc.cycles}` : '';
   }
   scenarioSelect.addEventListener('change', () => { stdReset(); applyScenario(scenarioSelect.value); });
+  modeSelect.addEventListener('change', () => switchMode(modeSelect.value));
 
   // ─── Standard mode ────────────────────────────────────────────────────────
   function buildPhaseStrip(mode) {
