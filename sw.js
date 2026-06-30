@@ -1,4 +1,4 @@
-const CACHE = 'breathing-v15';
+const CACHE = 'breathing-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -21,8 +21,15 @@ self.addEventListener('activate', e => {
   );
 });
 
+// Network-first: always try network, fall back to cache only if offline
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
+    fetch(e.request)
+      .then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(cache => cache.put(e.request, clone));
+        return res;
+      })
+      .catch(() => caches.match(e.request))
   );
 });
