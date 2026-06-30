@@ -649,19 +649,21 @@
   const PHASE_TONE = { inhale:528, hold:396, exhale:285, hold2:396 };
   function getAudioCtx() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume(); // fire-and-forget within gesture
     return audioCtx;
   }
-  async function playTone(freq, dur = 0.3) {
+  function playTone(freq, dur = 0.3) {
     if (!soundEnabled) return;
     try {
       const ctx = getAudioCtx();
-      if (ctx.state === 'suspended') await ctx.resume();
+      // Schedule 50ms ahead so any pending resume() completes before tone starts
+      const t = ctx.currentTime + 0.05;
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine'; osc.frequency.value = freq;
-      g.gain.setValueAtTime(0.5, ctx.currentTime);
-      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
-      osc.start(); osc.stop(ctx.currentTime + dur);
+      g.gain.setValueAtTime(0.5, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      osc.start(t); osc.stop(t + dur);
     } catch(e) {}
   }
   document.getElementById('soundToggle').addEventListener('change', function() {
