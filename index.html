@@ -30,16 +30,16 @@
     }
     body { padding: 14px 16px 40px; gap: 12px; }
 
-    /* Top bar: title + all toggles in one row */
+    /* Top bar: title centered, toggles row below */
     .top-bar {
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
       width: 100%; max-width: 340px;
     }
-    .top-bar h1 { font-size: 1rem; font-weight: 600; letter-spacing: 0.06em; color: var(--muted); text-transform: uppercase; }
-    .top-controls { display: flex; align-items: center; gap: 10px; }
-    .top-controls .tog-label { font-size: 0.72rem; gap: 4px; }
-    .top-controls .tog-pill { width: 34px; height: 20px; border-radius: 10px; }
-    .top-controls .tog-pill::after { width: 14px; height: 14px; top: 3px; left: 3px; }
+    .top-bar h1 { font-size: 1.1rem; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; }
+    .top-controls { display: flex; align-items: center; justify-content: center; gap: 20px; width: 100%; }
+    .top-controls .tog-label { font-size: 0.82rem; gap: 6px; }
+    .top-controls .tog-pill { width: 36px; height: 22px; border-radius: 11px; }
+    .top-controls .tog-pill::after { width: 16px; height: 16px; top: 3px; left: 3px; }
     .top-controls .tog-label input:checked + .tog-pill::after { transform: translateX(14px); }
 
     /* Scenario / Mode selects */
