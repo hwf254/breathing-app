@@ -84,7 +84,7 @@
       background: radial-gradient(circle at 38% 35%, rgba(88,166,255,0.35), rgba(88,166,255,0.08) 65%);
       box-shadow: 0 0 40px var(--accent-glow), 0 0 0 1px rgba(88,166,255,0.2);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), background 0.5s, box-shadow 0.5s;
+      transition: transform var(--breath-dur, 0.5s) linear, background 0.5s, box-shadow 0.5s;
       will-change: transform;
     }
     .phase-label { font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; }
@@ -601,6 +601,7 @@
     stopAll();
     currentMode = mode;
     modeSelect.value = mode;
+    bodyEl.style.setProperty('--breath-dur', '0.5s'); // reset; std/111 override per phase
 
     if (mode === '478' || mode === 'box' || mode === 'coherent') {
       showView('standard');
@@ -785,6 +786,7 @@
     stdPhaseIdx = idx;
     const ph = STD_MODES[currentMode].phases[idx];
     stdSecsLeft = ph.secs;
+    bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
     doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
     progressArc.style.transition = 'stroke 0.4s';
     stdUpdateDisplay(ph, stdSecsLeft, ph.secs);
@@ -894,6 +896,7 @@
     s111PhaseIdx = idx;
     const ph = PHASES_111[idx];
     s111SecsLeft = ph.secs;
+    bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
     doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
     progressArc111.style.transition = 'stroke 0.4s';
     s111UpdateDisplay(ph, s111SecsLeft, ph.secs);
@@ -998,6 +1001,7 @@
     if (whRunning) return;
     whRunning = true; whStartBtn.textContent = '暫停';
     acquireWakeLock(); startEntrainment();
+    playTone(PHASE_TONE.inhale); // first inhale cue
     whBreathStart = null;
     whBreathAnimId = requestAnimationFrame(whBreathFrame);
   }
@@ -1028,6 +1032,7 @@
     if (frac >= 1) {
       if (whBreathPhase === 'inhale') {
         whBreathPhase = 'exhale';
+        playTone(PHASE_TONE.exhale);
       } else {
         whBreathPhase = 'inhale';
         whBreathCount++;
@@ -1040,6 +1045,7 @@
           setTimeout(startWhHold, 300);
           return;
         }
+        playTone(PHASE_TONE.inhale); // next breath cue
       }
       whBreathStart = ts;
     }
@@ -1051,7 +1057,7 @@
     setBodyPhase('idle');
     let holdTime = 60;
     whHoldTimerEl.textContent = holdTime;
-    doVibrate([200]);
+    doVibrate([200]); playTone(PHASE_TONE.hold, 0.5);
     whHoldTicker = setInterval(() => {
       holdTime--;
       whHoldTimerEl.textContent = holdTime;
@@ -1069,7 +1075,7 @@
     setBodyPhase('inhale');
     let recTime = 15;
     whRecovTimerEl.textContent = recTime;
-    doVibrate([200]);
+    doVibrate([200]); playTone(PHASE_TONE.inhale, 0.5);
     acquireWakeLock();
     whRecovTicker = setInterval(() => {
       recTime--;
