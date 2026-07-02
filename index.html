@@ -325,7 +325,12 @@
     </div>
 
     <!-- Exercise -->
-    <div id="panel111Exercise" style="display:none;flex-direction:column;align-items:center;gap:16px;width:100%">
+    <div id="panel111Exercise" style="display:none;flex-direction:column;align-items:center;gap:14px;width:100%">
+      <div class="phase-strip">
+        <div class="phase-chip">緩慢吸氣 6 秒</div>
+        <div class="phase-chip">屏氣 3 秒</div>
+        <div class="phase-chip">呼氣排壓 6 秒</div>
+      </div>
       <div class="arena">
         <div class="ring-bg"></div>
         <svg class="svg-ring" viewBox="0 0 100 100">
@@ -338,6 +343,7 @@
         </div>
       </div>
       <div class="counter-111">第 <b id="count111">0</b> / 111 次</div>
+      <p class="tip" style="max-width:320px">111 次為一完整練習，每次吸氣緩慢深沉，屏氣 3 秒，呼氣時排出壓力與雜念。</p>
       <div class="controls">
         <button class="btn primary" id="startBtn111">開始</button>
         <button class="btn" id="resetBtn111">重置</button>
@@ -494,9 +500,9 @@
   };
 
   const PHASES_111 = [
-    { key: 'inhale', label: '吸氣', secs: 6 },
-    { key: 'hold',   label: '屏氣', secs: 3 },
-    { key: 'exhale', label: '呼氣', secs: 6 },
+    { key: 'inhale', label: '緩慢吸氣', secs: 6 },
+    { key: 'hold',   label: '屏氣',     secs: 3 },
+    { key: 'exhale', label: '呼氣排壓', secs: 6 },
   ];
   const ARC_COLOR_111 = { inhale:'#58a6ff', hold:'#a371f7', exhale:'#3fb950' };
 
