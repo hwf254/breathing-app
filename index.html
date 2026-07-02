@@ -28,7 +28,7 @@
       display: flex; flex-direction: column; align-items: center;
       justify-content: flex-start; overflow-x: hidden;
     }
-    body { padding: 14px 16px 40px; gap: 12px; }
+    body { padding: 14px 16px 84px; gap: 12px; }
 
     /* Top bar: title centered, toggles row below */
     .top-bar {
@@ -146,7 +146,7 @@
     .complete-screen {
       display: none; position: fixed; inset: 0; background: var(--bg);
       flex-direction: column; align-items: center; justify-content: center;
-      gap: 24px; padding: 32px; text-align: center; z-index: 10;
+      gap: 24px; padding: 32px; text-align: center; z-index: 70;
     }
     .complete-screen.show { display: flex; }
     .complete-icon { font-size: 4rem; }
@@ -203,9 +203,91 @@
     .wh-phase-sub { font-size: 0.78rem; color: var(--muted); }
 
     .wh-rounddone-icon { font-size: 2.5rem; }
+
+    /* ── Pages & bottom nav ── */
+    .page { display: none; flex-direction: column; align-items: center; gap: 12px; width: 100%; }
+    .page.active { display: flex; }
+
+    .bottom-nav {
+      position: fixed; left: 0; right: 0; bottom: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
+      display: flex; z-index: 40; padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 8px 0; color: var(--muted); font-size: 0.64rem;
+      cursor: pointer; border: none; background: transparent; -webkit-tap-highlight-color: transparent;
+    }
+    .nav-item .nav-icon { font-size: 1.25rem; line-height: 1; }
+    .nav-item.active { color: var(--accent); }
+
+    .page-title { font-size: 1.05rem; font-weight: 600; letter-spacing: 0.05em; color: var(--text); }
+    .page-sub { font-size: 0.78rem; color: var(--muted); text-align: center; line-height: 1.6; max-width: 320px; }
+
+    /* Log form */
+    .log-card { width: 100%; max-width: 340px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .log-label { font-size: 0.85rem; color: var(--text); font-weight: 500; }
+    .log-select, .log-input {
+      width: 100%; padding: 10px 12px; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 0.9rem;
+    }
+    .log-input::placeholder { color: var(--muted); }
+    .log-select {
+      appearance: none; cursor: pointer; padding-right: 32px;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b949e' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 12px center;
+    }
+    .log-select:focus, .log-input:focus { outline: none; border-color: var(--accent); }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row input[type=range] { flex: 1; accent-color: var(--accent); height: 4px; }
+    .slider-ends { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted); }
+    .slider-val { font-size: 0.95rem; color: var(--accent); font-weight: 700; min-width: 1.4em; text-align: center; }
+    .mood-row { display: flex; gap: 8px; }
+    .mood-btn { flex: 1; font-size: 1.5rem; padding: 8px 0; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: transform 0.12s, background 0.12s, border-color 0.12s; -webkit-tap-highlight-color: transparent; }
+    .mood-btn.sel { border-color: var(--accent); background: rgba(88,166,255,0.15); transform: scale(1.08); }
+    .star-row { display: flex; gap: 8px; justify-content: center; }
+    .star { font-size: 2rem; color: var(--border); cursor: pointer; transition: color 0.12s, transform 0.12s; -webkit-tap-highlight-color: transparent; line-height: 1; }
+    .star.sel { color: #f0b429; }
+    .log-save-msg { font-size: 0.82rem; color: var(--exhale); text-align: center; min-height: 1.1em; }
+
+    /* Progress */
+    .progress-stats { display: flex; gap: 28px; justify-content: center; align-items: flex-start; }
+    .stat-box { text-align: center; }
+    .stat-num { font-size: 1.9rem; font-weight: 700; color: var(--accent); line-height: 1; }
+    .stat-label { font-size: 0.72rem; color: var(--muted); margin-top: 4px; }
+    .phase-badge { font-size: 0.8rem; color: var(--text); background: var(--surface); border: 1px solid var(--border); padding: 6px 14px; border-radius: 20px; }
+    .progress-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; width: 100%; max-width: 340px; }
+    .day-cell {
+      aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      font-size: 0.85rem; color: var(--muted); font-weight: 600; -webkit-tap-highlight-color: transparent;
+    }
+    .day-cell.done { background: var(--accent); border-color: var(--accent); color: #fff; cursor: pointer; }
+    .day-cell.today { box-shadow: 0 0 0 2px var(--accent), 0 0 16px var(--accent-glow); border-color: var(--accent); color: var(--text); }
+    .day-cell.done.today { color: #fff; }
+    .progress-hint { font-size: 0.72rem; color: var(--muted); text-align: center; }
+
+    /* Course */
+    .course-phase { width: 100%; max-width: 340px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .course-phase-tag { font-size: 0.72rem; color: var(--accent); font-weight: 600; letter-spacing: 0.06em; }
+    .course-phase-title { font-size: 1.05rem; font-weight: 600; }
+    .course-line { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
+    .course-line b { color: var(--text); }
+    .course-phase .btn { margin-top: 4px; }
+
+    /* Record detail overlay */
+    .rec-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 60; align-items: center; justify-content: center; padding: 24px; }
+    .rec-overlay.show { display: flex; }
+    .rec-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 10px; }
+    .rec-title { font-size: 1.05rem; font-weight: 600; text-align: center; }
+    .rec-line { font-size: 0.86rem; color: var(--muted); }
+    .rec-line b { color: var(--text); font-weight: 600; }
   </style>
 </head>
 <body class="idle">
+
+  <!-- ══ PAGE: 練習 ══ -->
+  <div class="page active" id="pagePractice">
 
   <div class="top-bar">
     <h1>呼吸節拍器</h1>
@@ -445,6 +527,117 @@
 
   <p class="tip" id="tipText"></p>
 
+  </div><!-- /pagePractice -->
+
+  <!-- ══ PAGE: 今日記錄 ══ -->
+  <div class="page" id="pageLog">
+    <div class="page-title">📅 今日記錄</div>
+    <div class="page-sub" id="logDateSub"></div>
+
+    <div class="log-card">
+      <div class="log-label">今天完成的練習</div>
+      <select class="log-select" id="logPractice">
+        <option value="">— 尚未選擇 —</option>
+        <option value="coherent">5-5-5 相干呼吸</option>
+        <option value="478">4-7-8 呼吸法</option>
+        <option value="box">Box 4-4-4-4</option>
+        <option value="111">111 呼吸法</option>
+        <option value="wimhof">冰人呼吸</option>
+        <option value="free">自由練習</option>
+      </select>
+    </div>
+
+    <div class="log-card">
+      <div class="log-label">練習前狀態</div>
+      <div class="slider-row">
+        <input type="range" id="logBefore" min="1" max="5" value="3" />
+        <span class="slider-val" id="logBeforeVal">3</span>
+      </div>
+      <div class="slider-ends"><span>疲憊</span><span>充沛</span></div>
+    </div>
+
+    <div class="log-card">
+      <div class="log-label">練習後狀態</div>
+      <div class="slider-row">
+        <input type="range" id="logAfter" min="1" max="5" value="3" />
+        <span class="slider-val" id="logAfterVal">3</span>
+      </div>
+      <div class="slider-ends"><span>疲憊</span><span>充沛</span></div>
+    </div>
+
+    <div class="log-card">
+      <div class="log-label">今日感受</div>
+      <div class="mood-row" id="moodRow">
+        <button class="mood-btn" data-mood="😴">😴</button>
+        <button class="mood-btn" data-mood="😐">😐</button>
+        <button class="mood-btn" data-mood="🙂">🙂</button>
+        <button class="mood-btn" data-mood="😊">😊</button>
+        <button class="mood-btn" data-mood="✨">✨</button>
+      </div>
+    </div>
+
+    <div class="log-card">
+      <div class="log-label">今日直覺印象<span style="color:var(--muted);font-weight:400">（選填）</span></div>
+      <input class="log-input" id="logNote" type="text" placeholder="寫下腦中浮現的任何印象…" />
+    </div>
+
+    <div class="log-card">
+      <div class="log-label">整體評分</div>
+      <div class="star-row" id="starRow">
+        <span class="star" data-star="1">★</span>
+        <span class="star" data-star="2">★</span>
+        <span class="star" data-star="3">★</span>
+        <span class="star" data-star="4">★</span>
+        <span class="star" data-star="5">★</span>
+      </div>
+    </div>
+
+    <button class="btn primary" id="logSaveBtn" style="width:100%;max-width:340px">儲存今日記錄</button>
+    <p class="log-save-msg" id="logSaveMsg"></p>
+  </div><!-- /pageLog -->
+
+  <!-- ══ PAGE: 21天進度 ══ -->
+  <div class="page" id="pageProgress">
+    <div class="page-title">📊 21 天進度</div>
+    <div class="progress-stats">
+      <div class="stat-box"><div class="stat-num" id="statDay">0</div><div class="stat-label">目前第幾天</div></div>
+      <div class="stat-box"><div class="stat-num" id="statStreak">0</div><div class="stat-label">連續天數</div></div>
+    </div>
+    <div class="phase-badge" id="phaseBadge">尚未開始</div>
+    <div class="progress-grid" id="progressGrid"></div>
+    <p class="progress-hint">點擊已完成（藍色）的方格可查看當天記錄</p>
+  </div><!-- /pageProgress -->
+
+  <!-- ══ PAGE: 課程說明 ══ -->
+  <div class="page" id="pageCourse">
+    <div class="page-title">ℹ️ 21 天課程說明</div>
+    <div class="page-sub">循序漸進的三階段呼吸練習，每天一次，連續 21 天建立穩定的身心調節能力。</div>
+
+    <div class="course-phase">
+      <div class="course-phase-tag">第一階段 · 第 1–7 天</div>
+      <div class="course-phase-title">感受呼吸</div>
+      <div class="course-line"><b>每天做：</b>5-5-5 相干呼吸，約 5 分鐘</div>
+      <div class="course-line"><b>學習目的：</b>讓身體感受有意識的呼吸</div>
+      <button class="btn primary" data-course-mode="coherent">開始練習</button>
+    </div>
+
+    <div class="course-phase">
+      <div class="course-phase-tag">第二階段 · 第 8–14 天</div>
+      <div class="course-phase-title">深化放鬆</div>
+      <div class="course-line"><b>每天做：</b>4-7-8 呼吸，4 組</div>
+      <div class="course-line"><b>學習目的：</b>學會主動切換神經系統狀態</div>
+      <button class="btn primary" data-course-mode="478">開始練習</button>
+    </div>
+
+    <div class="course-phase">
+      <div class="course-phase-tag">第三階段 · 第 15–21 天</div>
+      <div class="course-phase-title">能量整合</div>
+      <div class="course-line"><b>每天做：</b>111 呼吸法，從 21 次開始</div>
+      <div class="course-line"><b>學習目的：</b>連接腹部能量中心，感受內在訊號</div>
+      <button class="btn primary" data-course-mode="111">開始練習</button>
+    </div>
+  </div><!-- /pageCourse -->
+
   <!-- Standard mode complete overlay -->
   <div class="complete-screen" id="completeScreen">
     <div class="complete-icon" id="completeIcon">✨</div>
@@ -454,6 +647,23 @@
     <button class="btn primary" id="restartBtn">再來一次</button>
     <button class="btn" id="completeResetBtn">返回主畫面</button>
   </div>
+
+  <!-- Record detail overlay -->
+  <div class="rec-overlay" id="recOverlay">
+    <div class="rec-card">
+      <div class="rec-title" id="recTitle">第 1 天記錄</div>
+      <div class="rec-line" id="recBody"></div>
+      <button class="btn primary" id="recCloseBtn">關閉</button>
+    </div>
+  </div>
+
+  <!-- ══ Bottom navigation ══ -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="practice"><span class="nav-icon">🫁</span><span>練習</span></button>
+    <button class="nav-item" data-page="log"><span class="nav-icon">📅</span><span>今日記錄</span></button>
+    <button class="nav-item" data-page="progress"><span class="nav-icon">📊</span><span>21天進度</span></button>
+    <button class="nav-item" data-page="course"><span class="nav-icon">ℹ️</span><span>課程說明</span></button>
+  </nav>
 
   <script>
   // ─── Scenarios ────────────────────────────────────────────────────────────
@@ -1130,11 +1340,178 @@
   whRestartBtn.addEventListener('click', whFullReset);
 
 
+  // ─── 21-day course / daily log / progress ─────────────────────────────────
+  const LS_RECORDS = 'breathing_records';
+  const LS_START   = 'breathing_course_start';
+  const PRACTICE_LABELS = {
+    '': '（未選擇）', coherent: '5-5-5 相干呼吸', '478': '4-7-8 呼吸法',
+    box: 'Box 4-4-4-4', '111': '111 呼吸法', wimhof: '冰人呼吸', free: '自由練習',
+  };
+
+  function loadRecords() { try { return JSON.parse(localStorage.getItem(LS_RECORDS) || '{}'); } catch(e) { return {}; } }
+  function saveRecords(r) { localStorage.setItem(LS_RECORDS, JSON.stringify(r)); }
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function todayStr() { const d = new Date(); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`; }
+  function addDays(str, n) {
+    const [y,m,d] = str.split('-').map(Number);
+    const dt = new Date(y, m-1, d); dt.setDate(dt.getDate()+n);
+    return `${dt.getFullYear()}-${pad2(dt.getMonth()+1)}-${pad2(dt.getDate())}`;
+  }
+  function daysBetween(a, b) {
+    const [ay,am,ad] = a.split('-').map(Number), [by,bm,bd] = b.split('-').map(Number);
+    return Math.round((new Date(by,bm-1,bd) - new Date(ay,am-1,ad)) / 86400000);
+  }
+  function getStart() { return localStorage.getItem(LS_START); }
+  function ensureStart() { if (!getStart()) localStorage.setItem(LS_START, todayStr()); }
+  function currentDay() { const s = getStart(); return s ? daysBetween(s, todayStr()) + 1 : 0; }
+  function streakCount() {
+    const recs = loadRecords(); let n = 0, d = todayStr();
+    while (recs[d]) { n++; d = addDays(d, -1); }
+    return n;
+  }
+  function phaseName(day) {
+    if (day >= 1 && day <= 7)  return '第一階段 · 感受呼吸';
+    if (day >= 8 && day <= 14) return '第二階段 · 深化放鬆';
+    if (day >= 15 && day <= 21) return '第三階段 · 能量整合';
+    if (day > 21) return '課程已完成 🎉';
+    return '尚未開始';
+  }
+
+  // ── Page switching ──
+  const navItems = document.querySelectorAll('.nav-item');
+  const PAGE_IDS = { practice: 'pagePractice', log: 'pageLog', progress: 'pageProgress', course: 'pageCourse' };
+  function showPage(name) {
+    Object.entries(PAGE_IDS).forEach(([k, id]) => document.getElementById(id).classList.toggle('active', k === name));
+    navItems.forEach(n => n.classList.toggle('active', n.dataset.page === name));
+    if (name === 'log') loadLogForm();
+    if (name === 'progress') renderProgress();
+    window.scrollTo(0, 0);
+  }
+  navItems.forEach(n => n.addEventListener('click', () => showPage(n.dataset.page)));
+
+  // ── Daily log form ──
+  const logPractice   = document.getElementById('logPractice');
+  const logBefore     = document.getElementById('logBefore');
+  const logAfter      = document.getElementById('logAfter');
+  const logBeforeVal  = document.getElementById('logBeforeVal');
+  const logAfterVal   = document.getElementById('logAfterVal');
+  const logNote       = document.getElementById('logNote');
+  const logSaveMsg    = document.getElementById('logSaveMsg');
+  const logDateSub    = document.getElementById('logDateSub');
+  const moodBtns      = document.querySelectorAll('#moodRow .mood-btn');
+  const stars         = document.querySelectorAll('#starRow .star');
+  let selectedMood = '', selectedRating = 0;
+
+  logBefore.addEventListener('input', () => logBeforeVal.textContent = logBefore.value);
+  logAfter.addEventListener('input',  () => logAfterVal.textContent  = logAfter.value);
+
+  moodBtns.forEach(b => b.addEventListener('click', () => {
+    selectedMood = b.dataset.mood;
+    moodBtns.forEach(x => x.classList.toggle('sel', x === b));
+  }));
+  function paintStars() { stars.forEach(s => s.classList.toggle('sel', +s.dataset.star <= selectedRating)); }
+  stars.forEach(s => s.addEventListener('click', () => { selectedRating = +s.dataset.star; paintStars(); }));
+
+  function loadLogForm() {
+    logDateSub.textContent = todayStr();
+    const rec = loadRecords()[todayStr()];
+    if (rec) {
+      logPractice.value = rec.practice || '';
+      logBefore.value = rec.before || 3; logBeforeVal.textContent = logBefore.value;
+      logAfter.value  = rec.after  || 3; logAfterVal.textContent  = logAfter.value;
+      logNote.value = rec.note || '';
+      selectedMood = rec.mood || ''; selectedRating = rec.rating || 0;
+    } else {
+      logPractice.value = '';
+      logBefore.value = 3; logBeforeVal.textContent = '3';
+      logAfter.value = 3;  logAfterVal.textContent = '3';
+      logNote.value = ''; selectedMood = ''; selectedRating = 0;
+    }
+    moodBtns.forEach(x => x.classList.toggle('sel', x.dataset.mood === selectedMood));
+    paintStars();
+    logSaveMsg.textContent = '';
+  }
+
+  document.getElementById('logSaveBtn').addEventListener('click', () => {
+    const recs = loadRecords();
+    recs[todayStr()] = {
+      practice: logPractice.value, before: +logBefore.value, after: +logAfter.value,
+      mood: selectedMood, note: logNote.value.trim(), rating: selectedRating, ts: Date.now(),
+    };
+    saveRecords(recs); ensureStart();
+    logSaveMsg.textContent = '✅ 已儲存今日記錄';
+    if (navigator.vibrate) navigator.vibrate(60);
+    renderProgress();
+  });
+
+  // ── Progress grid ──
+  const progressGrid = document.getElementById('progressGrid');
+  const statDay      = document.getElementById('statDay');
+  const statStreak   = document.getElementById('statStreak');
+  const phaseBadge   = document.getElementById('phaseBadge');
+
+  function renderProgress() {
+    const recs = loadRecords(), start = getStart(), today = todayStr();
+    const day = currentDay();
+    statDay.textContent = start ? Math.min(day, 21) : 0;
+    statStreak.textContent = streakCount();
+    phaseBadge.textContent = phaseName(day);
+    progressGrid.innerHTML = '';
+    for (let i = 1; i <= 21; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'day-cell'; cell.textContent = i;
+      if (start) {
+        const dateI = addDays(start, i - 1);
+        if (recs[dateI]) {
+          cell.classList.add('done');
+          cell.addEventListener('click', () => showRecord(dateI, i));
+        }
+        if (dateI === today) cell.classList.add('today');
+      } else if (i === 1) {
+        cell.classList.add('today');
+      }
+      progressGrid.appendChild(cell);
+    }
+  }
+
+  // ── Record detail overlay ──
+  const recOverlay = document.getElementById('recOverlay');
+  const recTitle   = document.getElementById('recTitle');
+  const recBody    = document.getElementById('recBody');
+  function showRecord(dateStr, dayNum) {
+    const rec = loadRecords()[dateStr];
+    if (!rec) return;
+    recTitle.textContent = `第 ${dayNum} 天記錄`;
+    recBody.innerHTML = [
+      `<b>日期：</b>${dateStr}`,
+      `<b>練習：</b>${PRACTICE_LABELS[rec.practice] || '（未選擇）'}`,
+      `<b>練習前：</b>${rec.before} / 5　<b>練習後：</b>${rec.after} / 5`,
+      `<b>感受：</b>${rec.mood || '—'}`,
+      `<b>評分：</b>${'★'.repeat(rec.rating)}${'☆'.repeat(5 - rec.rating)}`,
+      rec.note ? `<b>直覺印象：</b>${rec.note.replace(/</g,'&lt;')}` : '',
+    ].filter(Boolean).map(l => `<div class="rec-line">${l}</div>`).join('');
+    recOverlay.classList.add('show');
+  }
+  recOverlay.addEventListener('click', e => { if (e.target === recOverlay) recOverlay.classList.remove('show'); });
+  document.getElementById('recCloseBtn').addEventListener('click', () => recOverlay.classList.remove('show'));
+
+  // ── Course "開始練習" buttons ──
+  document.querySelectorAll('[data-course-mode]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.courseMode;
+      showPage('practice');
+      scenarioSelect.value = 'free'; applyScenario('free');
+      switchMode(mode);
+    });
+  });
+
+
   // ─── Init ─────────────────────────────────────────────────────────────────
   buildPhaseStrip('478');
   applyScenario('free');
   showView('standard');
   showStep(0);
+  showPage('practice');
 
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
   </script>
