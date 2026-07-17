@@ -912,21 +912,32 @@
     entrainHint.innerHTML = ENTRAIN_HINTS[entrainModeSel.value];
   }
 
+  const ENTRAIN_LEAD = 0.15; // audio-thread warm-up lead, avoids startup crackle
+  const ENTRAIN_IN   = 0.6;  // fade-in seconds
+  const ENTRAIN_OUT  = 0.15; // fade-out seconds
+
   function startEntrainment() {
     if (!entrainEnabled) return; stopEntrainment();
     try {
       const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
       const beatHz = parseFloat(entrainFreqSel.value);
       const carrier = 200;
-      const master = ctx.createGain(); master.gain.value = vol; master.connect(ctx.destination);
+      const t0 = ctx.currentTime + ENTRAIN_LEAD;
+      const master = ctx.createGain();
+      // Ramp from silence instead of stepping to full volume (a step = an audible click).
+      // Pin to 0 from now, not just at t0 — the param defaults to 1 until first scheduled.
+      master.gain.setValueAtTime(0, ctx.currentTime);
+      master.gain.setValueAtTime(0, t0);
+      master.gain.linearRampToValueAtTime(vol, t0 + ENTRAIN_IN);
+      master.connect(ctx.destination);
       if (entrainModeSel.value === 'binaural') {
         const merger = ctx.createChannelMerger(2); merger.connect(master);
         const oscL = ctx.createOscillator(), gL = ctx.createGain();
         oscL.frequency.value = carrier; oscL.type = 'sine'; gL.gain.value = 1;
-        oscL.connect(gL); gL.connect(merger, 0, 0); oscL.start();
+        oscL.connect(gL); gL.connect(merger, 0, 0); oscL.start(t0);
         const oscR = ctx.createOscillator(), gR = ctx.createGain();
         oscR.frequency.value = carrier + beatHz; oscR.type = 'sine'; gR.gain.value = 1;
-        oscR.connect(gR); gR.connect(merger, 0, 1); oscR.start();
+        oscR.connect(gR); gR.connect(merger, 0, 1); oscR.start(t0);
         entrainNodes = { type:'binaural', oscL, oscR, master };
       } else {
         const osc = ctx.createOscillator(), lfo = ctx.createOscillator();
@@ -935,23 +946,34 @@
         lfo.frequency.value = beatHz; lfo.type = 'sine';
         lfoG.gain.value = 0.5; lfo.connect(lfoG); ampG.gain.value = 0.5;
         lfoG.connect(ampG.gain); osc.connect(ampG); ampG.connect(master);
-        osc.start(); lfo.start();
+        osc.start(t0); lfo.start(t0);
         entrainNodes = { type:'iso', osc, lfo, master };
       }
     } catch(e) {}
   }
   function stopEntrainment() {
     if (!entrainNodes) return;
+    const n = entrainNodes; entrainNodes = null; // release before the async tail
     try {
-      if (entrainNodes.type === 'binaural') { entrainNodes.oscL.stop(); entrainNodes.oscR.stop(); }
-      else { entrainNodes.osc.stop(); entrainNodes.lfo.stop(); }
-      entrainNodes.master.disconnect();
+      const ctx = getAudioCtx(), t = ctx.currentTime;
+      // Fade out before stopping, otherwise the cut mid-waveform clicks
+      n.master.gain.cancelScheduledValues(t);
+      n.master.gain.setValueAtTime(n.master.gain.value, t);
+      n.master.gain.linearRampToValueAtTime(0, t + ENTRAIN_OUT);
+      const stopAt = t + ENTRAIN_OUT + 0.02;
+      if (n.type === 'binaural') { n.oscL.stop(stopAt); n.oscR.stop(stopAt); }
+      else { n.osc.stop(stopAt); n.lfo.stop(stopAt); }
+      setTimeout(() => { try { n.master.disconnect(); } catch(e) {} }, (ENTRAIN_OUT + 0.1) * 1000);
     } catch(e) {}
-    entrainNodes = null;
   }
   function updateEntrainVol() {
     if (!entrainNodes) return;
-    try { entrainNodes.master.gain.setValueAtTime(entrainVol.value/100*0.4, getAudioCtx().currentTime); } catch(e) {}
+    try {
+      const ctx = getAudioCtx(), g = entrainNodes.master.gain, t = ctx.currentTime;
+      g.cancelScheduledValues(t);
+      g.setValueAtTime(g.value, t);
+      g.linearRampToValueAtTime(entrainVol.value/100*0.4, t + 0.05);
+    } catch(e) {}
   }
   entrainToggle.addEventListener('change', function() {
     entrainEnabled = this.checked;
