@@ -301,6 +301,9 @@
       <label class="tog-label">
         <input type="checkbox" id="soundToggle" /><span class="tog-pill"></span><span>聲音</span>
       </label>
+      <label class="tog-label">
+        <input type="checkbox" id="voiceToggle" /><span class="tog-pill"></span><span>語音</span>
+      </label>
     </div>
   </div>
 
@@ -849,6 +852,7 @@
     stopWhAll();
     releaseWakeLock();
     stopEntrainment();
+    stopSpeech();
   }
 
   // ─── Vibration & Audio ────────────────────────────────────────────────────
@@ -883,6 +887,71 @@
   document.getElementById('soundToggle').addEventListener('change', function() {
     soundEnabled = this.checked;
     if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
+  });
+
+  // ─── Voice guidance ───────────────────────────────────────────────────────
+  // Spoken wording — tweak here if a voice mispronounces something.
+  const VOICE_TEXT = {
+    inhale: '吸氣',
+    hold:   '屏住',
+    exhale: '呼氣',
+    hold2:  '屏住',
+  };
+  // Preferred female Chinese voices, best first (Windows / Apple / Android / Chrome).
+  const FEMALE_VOICES = [
+    'Hanhan', 'Yating', 'HsiaoChen', 'HiuGaai', 'Xiaoxiao', 'Xiaoyi',
+    'Mei-Jia', 'Meijia', 'Ting-Ting', 'Tingting', 'Sinji',
+    '國語', '普通話', 'Female', '女'
+  ];
+
+  let voiceEnabled = false, chosenVoice = null;
+  const speechOK = 'speechSynthesis' in window;
+
+  function pickVoice() {
+    if (!speechOK) return null;
+    const zh = speechSynthesis.getVoices().filter(v => /^zh/i.test(v.lang));
+    if (!zh.length) return null;
+    // Prefer zh-TW, then any Chinese; within each, prefer a known female voice.
+    const tw = zh.filter(v => /zh[-_]TW/i.test(v.lang));
+    for (const pool of [tw, zh]) {
+      for (const name of FEMALE_VOICES) {
+        const hit = pool.find(v => v.name.includes(name));
+        if (hit) return hit;
+      }
+    }
+    return tw[0] || zh[0];
+  }
+  if (speechOK) {
+    chosenVoice = pickVoice();
+    // Voice list often loads async — re-pick when it arrives.
+    speechSynthesis.addEventListener('voiceschanged', () => { chosenVoice = pickVoice(); });
+  }
+
+  function speak(text) {
+    if (!voiceEnabled || !speechOK || !text) return;
+    try {
+      speechSynthesis.cancel(); // never let cues queue up behind each other
+      const u = new SpeechSynthesisUtterance(text);
+      if (chosenVoice) u.voice = chosenVoice;
+      u.lang   = chosenVoice ? chosenVoice.lang : 'zh-TW';
+      u.rate   = 0.85; // slower = calmer
+      u.pitch  = 1.1;  // slightly bright, warmer female tone
+      u.volume = 1;
+      speechSynthesis.speak(u);
+    } catch(e) {}
+  }
+  function speakPhase(key) { speak(VOICE_TEXT[key]); }
+  function stopSpeech() { if (speechOK) { try { speechSynthesis.cancel(); } catch(e) {} } }
+
+  document.getElementById('voiceToggle').addEventListener('change', function() {
+    voiceEnabled = this.checked;
+    if (voiceEnabled) {
+      if (!speechOK) { alert('這個瀏覽器不支援語音引導'); this.checked = false; voiceEnabled = false; return; }
+      chosenVoice = pickVoice();
+      speak('語音引導已開啟'); // also primes speech on iOS (must run inside a gesture)
+    } else {
+      stopSpeech();
+    }
   });
 
   // ─── WakeLock ─────────────────────────────────────────────────────────────
@@ -1025,7 +1094,7 @@
     const ph = STD_MODES[currentMode].phases[idx];
     stdSecsLeft = ph.secs;
     bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
-    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440); speakPhase(ph.key);
     progressArc.style.transition = 'stroke 0.4s';
     stdUpdateDisplay(ph, stdSecsLeft, ph.secs);
   }
@@ -1079,6 +1148,7 @@
     document.getElementById('completeTitle').textContent = sc.title;
     document.getElementById('completeMsg').textContent   = sc.msg;
     document.getElementById('completeCycles').textContent = `已完成 ${stdCycleCount} 個循環`;
+    speak('練習完成');
     completeScreen.classList.add('show');
     releaseWakeLock(); stopEntrainment();
     doVibrate([100,80,100,80,200]);
@@ -1135,7 +1205,7 @@
     const ph = PHASES_111[idx];
     s111SecsLeft = ph.secs;
     bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
-    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440); speakPhase(ph.key);
     progressArc111.style.transition = 'stroke 0.4s';
     s111UpdateDisplay(ph, s111SecsLeft, ph.secs);
   }
@@ -1188,6 +1258,7 @@
     rubCount = 0; rubCountEl.textContent = 0; rubDone.classList.remove('show');
     releaseWakeLock(); stopEntrainment(); setBodyPhase('idle');
     doVibrate([200,100,200,100,200]);
+    speak('完成一百一十一次呼吸。請搓熱雙手，敷在眼睛上');
   }
 
   startBtn111.addEventListener('click', () => {
@@ -1240,6 +1311,7 @@
     whRunning = true; whStartBtn.textContent = '暫停';
     acquireWakeLock(); startEntrainment();
     playTone(PHASE_TONE.inhale); // first inhale cue
+    speak('開始快速深呼吸'); // rapid breaths aren't narrated one by one — too noisy
     whBreathStart = null;
     whBreathAnimId = requestAnimationFrame(whBreathFrame);
   }
@@ -1296,6 +1368,7 @@
     let holdTime = 60;
     whHoldTimerEl.textContent = holdTime;
     doVibrate([200]); playTone(PHASE_TONE.hold, 0.5);
+    speak('呼氣後，屏住呼吸');
     whHoldTicker = setInterval(() => {
       holdTime--;
       whHoldTimerEl.textContent = holdTime;
@@ -1314,6 +1387,7 @@
     let recTime = 15;
     whRecovTimerEl.textContent = recTime;
     doVibrate([200]); playTone(PHASE_TONE.inhale, 0.5);
+    speak('深吸一口氣，屏住');
     acquireWakeLock();
     whRecovTicker = setInterval(() => {
       recTime--;
@@ -1329,9 +1403,11 @@
     releaseWakeLock(); stopEntrainment();
     doVibrate([100,80,100,80,200]);
     if (whRound >= 4) {
+      speak('四輪冰人呼吸完成');
       showWhPhase('alldone');
     } else {
       whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`;
+      speak(`第 ${whRound} 輪完成`);
       showWhPhase('rounddone');
     }
   }
