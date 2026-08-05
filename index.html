@@ -851,6 +851,7 @@
     // Stop wim hof
     stopWhAll();
     releaseWakeLock();
+    cancelEntrainRestart();
     stopEntrainment();
     stopSpeech();
   }
@@ -870,18 +871,24 @@
     if (audioCtx.state === 'suspended') audioCtx.resume(); // fire-and-forget within gesture
     return audioCtx;
   }
-  function playTone(freq, dur = 0.3) {
+  async function playTone(freq, dur = 0.3) {
     if (!soundEnabled) return;
     try {
       const ctx = getAudioCtx();
-      // Schedule 50ms ahead so any pending resume() completes before tone starts
+      // Same trap as the entrainment tone: a suspended context freezes currentTime, so a
+      // time computed before the resume lands in the past and the tone starts mid-waveform.
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch(e) {} }
+      if (!soundEnabled) return;
+      // Schedule 50ms ahead so the audio thread has a buffer to work with
       const t = ctx.currentTime + 0.05;
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.connect(g); g.connect(ctx.destination);
       osc.type = 'sine'; osc.frequency.value = freq;
-      g.gain.setValueAtTime(0.5, t);
+      // Ramp up over 10ms instead of stepping to 0.5 — a step is an audible click
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.5, t + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      osc.start(t); osc.stop(t + dur);
+      osc.start(t); osc.stop(t + dur + 0.02);
     } catch(e) {}
   }
   document.getElementById('soundToggle').addEventListener('change', function() {
@@ -1001,10 +1008,19 @@
   const ENTRAIN_IN   = 0.6;  // fade-in seconds
   const ENTRAIN_OUT  = 0.15; // fade-out seconds
 
-  function startEntrainment() {
+  let entrainGen = 0, entrainRestartTimer = null;
+  function practiceRunning() { return stdRunning || s111Running || whRunning; }
+
+  async function startEntrainment() {
     if (!entrainEnabled) return; stopEntrainment();
+    const gen = ++entrainGen;
     try {
       const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
+      // On mobile, opening a native <select> picker suspends the audio context. Scheduling
+      // against the frozen currentTime lands in the past once it resumes, so the tone starts
+      // mid-waveform and cracks. Wait for the resume, then read the clock fresh.
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch(e) {} }
+      if (gen !== entrainGen || !entrainEnabled) return; // superseded while awaiting
       const beatHz = parseFloat(entrainFreqSel.value);
       const carrier = 200;
       const t0 = ctx.currentTime + ENTRAIN_LEAD;
@@ -1051,6 +1067,18 @@
       setTimeout(() => { try { n.master.disconnect(); } catch(e) {} }, (ENTRAIN_OUT + 0.1) * 1000);
     } catch(e) {}
   }
+  // Restarting on the spot overlaps the new tone with the old one's fade-out, and on mobile
+  // stacking oscillators mid-fade is exactly when the audio thread glitches. Let the fade
+  // finish first, and coalesce rapid changes into a single restart.
+  function restartEntrainment() {
+    stopEntrainment();
+    clearTimeout(entrainRestartTimer);
+    entrainRestartTimer = setTimeout(() => {
+      if (entrainEnabled && practiceRunning()) startEntrainment();
+    }, (ENTRAIN_OUT + 0.05) * 1000);
+  }
+  function cancelEntrainRestart() { clearTimeout(entrainRestartTimer); entrainRestartTimer = null; }
+
   function updateEntrainVol() {
     if (!entrainNodes) return;
     try {
@@ -1063,15 +1091,15 @@
   entrainToggle.addEventListener('change', function() {
     entrainEnabled = this.checked;
     entrainBody.classList.toggle('open', entrainEnabled);
-    if (entrainEnabled) { getAudioCtx(); if (stdRunning || s111Running || whRunning) startEntrainment(); }
-    else stopEntrainment();
+    if (entrainEnabled) { getAudioCtx(); if (practiceRunning()) startEntrainment(); }
+    else { cancelEntrainRestart(); stopEntrainment(); }
   });
   entrainFreqSel.addEventListener('change', () => {
-    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+    if (entrainEnabled && practiceRunning()) restartEntrainment();
   });
   entrainModeSel.addEventListener('change', () => {
     updateEntrainHint();
-    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+    if (entrainEnabled && practiceRunning()) restartEntrainment();
   });
   entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
 
