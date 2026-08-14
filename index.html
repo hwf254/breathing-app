@@ -301,6 +301,9 @@
       <label class="tog-label">
         <input type="checkbox" id="soundToggle" /><span class="tog-pill"></span><span>聲音</span>
       </label>
+      <label class="tog-label">
+        <input type="checkbox" id="voiceToggle" /><span class="tog-pill"></span><span>語音</span>
+      </label>
     </div>
   </div>
 
@@ -848,7 +851,9 @@
     // Stop wim hof
     stopWhAll();
     releaseWakeLock();
+    cancelEntrainRestart();
     stopEntrainment();
+    stopSpeech();
   }
 
   // ─── Vibration & Audio ────────────────────────────────────────────────────
@@ -877,17 +882,22 @@
     if (audioCtx.state === 'suspended') audioCtx.resume(); // fire-and-forget within gesture
     return audioCtx;
   }
-  function playTone(freq, dur = 0.3) {
+  async function playTone(freq, dur = 0.3) {
     if (!soundEnabled) return;
     try {
       const ctx = getAudioCtx();
-      // Schedule 50ms ahead so any pending resume() completes before tone starts
+      // Same trap as the entrainment tone: a suspended context freezes currentTime, so a
+      // time computed before the resume lands in the past and the tone starts mid-waveform.
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch(e) {} }
+      if (!soundEnabled) return;
+      // Schedule 50ms ahead so the audio thread has a buffer to work with
       const t = ctx.currentTime + 0.05;
       const osc = ctx.createOscillator(), g = ctx.createGain();
       osc.connect(g); g.connect(masterBus);
       osc.type = 'sine'; osc.frequency.value = freq;
+      // Soft attack + release so the tone never clicks; 0.4 leaves headroom under the limiter
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.4, t + 0.02); // soft attack, no click
+      g.gain.exponentialRampToValueAtTime(0.4, t + 0.02);
       g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
       osc.start(t); osc.stop(t + dur + 0.02);
     } catch(e) {}
@@ -895,6 +905,87 @@
   document.getElementById('soundToggle').addEventListener('change', function() {
     soundEnabled = this.checked;
     if (soundEnabled) { getAudioCtx(); playTone(528, 0.2); }
+  });
+
+  // ─── Voice guidance ───────────────────────────────────────────────────────
+  // Spoken wording — tweak here if a voice mispronounces something.
+  const VOICE_TEXT = {
+    inhale: '吸氣',
+    hold:   '屏住',
+    exhale: '呼氣',
+    hold2:  '屏住',
+  };
+  // Known female Chinese voices, best first (Windows / Apple / Android-Google / Samsung).
+  const FEMALE_VOICES = [
+    'Hanhan', 'Yating', 'HsiaoChen', 'HiuGaai', 'Xiaoxiao', 'Xiaoyi',
+    'Mei-Jia', 'Meijia', 'Ting-Ting', 'Tingting', 'Sin-ji', 'Sinji', 'Yu-shu',
+    '國語', '普通話', 'Female', '女'
+  ];
+  // Known male voices to avoid — Android/Samsung often expose only generic names
+  // like "Chinese (Taiwan)", so ruling out males is more reliable than matching females.
+  const MALE_VOICES = ['Zhiwei', 'Yunjhe', 'Kangkang', 'Yunyang', 'Yunxi', 'Li-mu', 'Limu', 'Male', '男'];
+
+  let voiceEnabled = false, chosenVoice = null;
+  const speechOK = 'speechSynthesis' in window;
+
+  function pickVoice() {
+    if (!speechOK) return null;
+    const zh = speechSynthesis.getVoices().filter(v => /^zh/i.test(v.lang));
+    if (!zh.length) return null;
+    const isMale = v => MALE_VOICES.some(n => v.name.includes(n));
+    // Prefer zh-TW, then any Chinese; within each, prefer a known female, else any non-male.
+    const tw = zh.filter(v => /zh[-_]TW/i.test(v.lang));
+    for (const pool of [tw, zh]) {
+      if (!pool.length) continue;
+      for (const name of FEMALE_VOICES) {
+        const hit = pool.find(v => v.name.includes(name));
+        if (hit) return hit;
+      }
+      const nonMale = pool.find(v => !isMale(v)); // Android default zh voice is female
+      if (nonMale) return nonMale;
+    }
+    return tw[0] || zh[0];
+  }
+  if (speechOK) {
+    chosenVoice = pickVoice();
+    // Voice list often loads async — re-pick when it arrives.
+    speechSynthesis.addEventListener('voiceschanged', () => { chosenVoice = pickVoice(); });
+  }
+
+  function utter(text) {
+    const u = new SpeechSynthesisUtterance(text);
+    if (chosenVoice) u.voice = chosenVoice;
+    u.lang   = chosenVoice ? chosenVoice.lang : 'zh-TW';
+    u.rate   = 0.85; // slower = calmer
+    u.pitch  = 1.1;  // slightly bright, warmer female tone
+    u.volume = 1;
+    return u;
+  }
+  function speak(text) {
+    if (!voiceEnabled || !speechOK || !text) return;
+    try {
+      const busy = speechSynthesis.speaking || speechSynthesis.pending;
+      speechSynthesis.cancel(); // never let cues queue up behind each other
+      // Android drops an utterance queued in the same tick as cancel() — give it one tick.
+      if (busy) setTimeout(() => { if (voiceEnabled) speechSynthesis.speak(utter(text)); }, 60);
+      else speechSynthesis.speak(utter(text));
+    } catch(e) {}
+  }
+  function speakPhase(key) { speak(VOICE_TEXT[key]); }
+  function stopSpeech() { if (speechOK) { try { speechSynthesis.cancel(); } catch(e) {} } }
+
+  document.getElementById('voiceToggle').addEventListener('change', function() {
+    voiceEnabled = this.checked;
+    if (voiceEnabled) {
+      if (!speechOK) { alert('這個瀏覽器不支援語音引導'); this.checked = false; voiceEnabled = false; return; }
+      chosenVoice = pickVoice();
+      if (!chosenVoice) {
+        alert('找不到中文語音。\n\nAndroid：設定 → 系統 → 語言與輸入 → 文字轉語音輸出，\n安裝「Google 文字轉語音」的中文語音包後再試一次。');
+      }
+      speak('語音引導已開啟'); // also primes speech on iOS/Android (must run inside a gesture)
+    } else {
+      stopSpeech();
+    }
   });
 
   // ─── WakeLock ─────────────────────────────────────────────────────────────
@@ -928,10 +1019,19 @@
   const ENTRAIN_IN   = 0.6;  // fade-in seconds
   const ENTRAIN_OUT  = 0.15; // fade-out seconds
 
-  function startEntrainment() {
+  let entrainGen = 0, entrainRestartTimer = null;
+  function practiceRunning() { return stdRunning || s111Running || whRunning; }
+
+  async function startEntrainment() {
     if (!entrainEnabled) return; stopEntrainment();
+    const gen = ++entrainGen;
     try {
       const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
+      // On mobile, opening a native <select> picker suspends the audio context. Scheduling
+      // against the frozen currentTime lands in the past once it resumes, so the tone starts
+      // mid-waveform and cracks. Wait for the resume, then read the clock fresh.
+      if (ctx.state === 'suspended') { try { await ctx.resume(); } catch(e) {} }
+      if (gen !== entrainGen || !entrainEnabled) return; // superseded while awaiting
       const beatHz = parseFloat(entrainFreqSel.value);
       const carrier = 200;
       const t0 = ctx.currentTime + ENTRAIN_LEAD;
@@ -978,6 +1078,18 @@
       setTimeout(() => { try { n.master.disconnect(); } catch(e) {} }, (ENTRAIN_OUT + 0.1) * 1000);
     } catch(e) {}
   }
+  // Restarting on the spot overlaps the new tone with the old one's fade-out, and on mobile
+  // stacking oscillators mid-fade is exactly when the audio thread glitches. Let the fade
+  // finish first, and coalesce rapid changes into a single restart.
+  function restartEntrainment() {
+    stopEntrainment();
+    clearTimeout(entrainRestartTimer);
+    entrainRestartTimer = setTimeout(() => {
+      if (entrainEnabled && practiceRunning()) startEntrainment();
+    }, (ENTRAIN_OUT + 0.05) * 1000);
+  }
+  function cancelEntrainRestart() { clearTimeout(entrainRestartTimer); entrainRestartTimer = null; }
+
   function updateEntrainVol() {
     if (!entrainNodes) return;
     try {
@@ -990,15 +1102,15 @@
   entrainToggle.addEventListener('change', function() {
     entrainEnabled = this.checked;
     entrainBody.classList.toggle('open', entrainEnabled);
-    if (entrainEnabled) { getAudioCtx(); if (stdRunning || s111Running || whRunning) startEntrainment(); }
-    else stopEntrainment();
+    if (entrainEnabled) { getAudioCtx(); if (practiceRunning()) startEntrainment(); }
+    else { cancelEntrainRestart(); stopEntrainment(); }
   });
   entrainFreqSel.addEventListener('change', () => {
-    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+    if (entrainEnabled && practiceRunning()) restartEntrainment();
   });
   entrainModeSel.addEventListener('change', () => {
     updateEntrainHint();
-    if (entrainEnabled && (stdRunning || s111Running || whRunning)) startEntrainment();
+    if (entrainEnabled && practiceRunning()) restartEntrainment();
   });
   entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
 
@@ -1037,7 +1149,7 @@
     const ph = STD_MODES[currentMode].phases[idx];
     stdSecsLeft = ph.secs;
     bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
-    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440); speakPhase(ph.key);
     progressArc.style.transition = 'stroke 0.4s';
     stdUpdateDisplay(ph, stdSecsLeft, ph.secs);
   }
@@ -1091,6 +1203,7 @@
     document.getElementById('completeTitle').textContent = sc.title;
     document.getElementById('completeMsg').textContent   = sc.msg;
     document.getElementById('completeCycles').textContent = `已完成 ${stdCycleCount} 個循環`;
+    speak('練習完成');
     completeScreen.classList.add('show');
     releaseWakeLock(); stopEntrainment();
     doVibrate([100,80,100,80,200]);
@@ -1147,7 +1260,7 @@
     const ph = PHASES_111[idx];
     s111SecsLeft = ph.secs;
     bodyEl.style.setProperty('--breath-dur', ph.secs + 's');
-    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440);
+    doVibrate([100]); playTone(PHASE_TONE[ph.key] || 440); speakPhase(ph.key);
     progressArc111.style.transition = 'stroke 0.4s';
     s111UpdateDisplay(ph, s111SecsLeft, ph.secs);
   }
@@ -1200,6 +1313,7 @@
     rubCount = 0; rubCountEl.textContent = 0; rubDone.classList.remove('show');
     releaseWakeLock(); stopEntrainment(); setBodyPhase('idle');
     doVibrate([200,100,200,100,200]);
+    speak('完成一百一十一次呼吸。請搓熱雙手，敷在眼睛上');
   }
 
   startBtn111.addEventListener('click', () => {
@@ -1252,6 +1366,7 @@
     whRunning = true; whStartBtn.textContent = '暫停';
     acquireWakeLock(); startEntrainment();
     playTone(PHASE_TONE.inhale); // first inhale cue
+    speak('開始快速深呼吸'); // rapid breaths aren't narrated one by one — too noisy
     whBreathStart = null;
     whBreathAnimId = requestAnimationFrame(whBreathFrame);
   }
@@ -1308,6 +1423,7 @@
     let holdTime = 60;
     whHoldTimerEl.textContent = holdTime;
     doVibrate([200]); playTone(PHASE_TONE.hold, 0.5);
+    speak('呼氣後，屏住呼吸');
     whHoldTicker = setInterval(() => {
       holdTime--;
       whHoldTimerEl.textContent = holdTime;
@@ -1326,6 +1442,7 @@
     let recTime = 15;
     whRecovTimerEl.textContent = recTime;
     doVibrate([200]); playTone(PHASE_TONE.inhale, 0.5);
+    speak('深吸一口氣，屏住');
     acquireWakeLock();
     whRecovTicker = setInterval(() => {
       recTime--;
@@ -1341,9 +1458,11 @@
     releaseWakeLock(); stopEntrainment();
     doVibrate([100,80,100,80,200]);
     if (whRound >= 4) {
+      speak('四輪冰人呼吸完成');
       showWhPhase('alldone');
     } else {
       whRoundDoneTitle.textContent = `第 ${whRound} 輪完成！`;
+      speak(`第 ${whRound} 輪完成`);
       showWhPhase('rounddone');
     }
   }
