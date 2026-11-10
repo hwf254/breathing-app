@@ -1076,8 +1076,8 @@
   const entrainVolVal    = document.getElementById('entrainVolVal');
 
   const ENTRAIN_HINTS = {
-    binaural: '<b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。',
-    iso:      '<b>等響節拍</b>：基礎音以選定頻率脈衝調幅，免耳機也有效。',
+    binaural: '<b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。開關一開即播放，不必開始呼吸練習。',
+    iso:      '<b>等響節拍</b>：基礎音以選定頻率脈衝調幅，免耳機也有效。開關一開即播放，不必開始呼吸練習。',
   };
 
   function updateEntrainHint() {
@@ -1092,7 +1092,7 @@
   function practiceRunning() { return stdRunning || s111Running || whRunning || obsRunning; }
 
   async function startEntrainment() {
-    if (!entrainEnabled) return; stopEntrainment();
+    if (!entrainEnabled) return; stopEntrainment(true);
     const gen = ++entrainGen;
     try {
       const ctx = getAudioCtx(), vol = entrainVol.value / 100 * 0.4;
@@ -1132,7 +1132,11 @@
       }
     } catch(e) {}
   }
-  function stopEntrainment() {
+  function stopEntrainment(force) {
+    // When the toggle is on the drone plays standalone, so practice pause/stop/mode-switch
+    // (which call this unforced) must NOT silence it. Only a forced stop (toggle off, or a
+    // clean restart for a freq/mode change) actually tears the oscillators down.
+    if (entrainEnabled && !force) return;
     if (!entrainNodes) return;
     const n = entrainNodes; entrainNodes = null; // release before the async tail
     try {
@@ -1151,10 +1155,10 @@
   // stacking oscillators mid-fade is exactly when the audio thread glitches. Let the fade
   // finish first, and coalesce rapid changes into a single restart.
   function restartEntrainment() {
-    stopEntrainment();
+    stopEntrainment(true);
     clearTimeout(entrainRestartTimer);
     entrainRestartTimer = setTimeout(() => {
-      if (entrainEnabled && practiceRunning()) startEntrainment();
+      if (entrainEnabled) startEntrainment();
     }, (ENTRAIN_OUT + 0.05) * 1000);
   }
   function cancelEntrainRestart() { clearTimeout(entrainRestartTimer); entrainRestartTimer = null; }
@@ -1171,15 +1175,16 @@
   entrainToggle.addEventListener('change', function() {
     entrainEnabled = this.checked;
     entrainBody.classList.toggle('open', entrainEnabled);
-    if (entrainEnabled) { getAudioCtx(); if (practiceRunning()) startEntrainment(); }
-    else { cancelEntrainRestart(); stopEntrainment(); }
+    // Standalone: start the moment it's turned on — no breathing practice required.
+    if (entrainEnabled) { getAudioCtx(); startEntrainment(); }
+    else { cancelEntrainRestart(); stopEntrainment(true); }
   });
   entrainFreqSel.addEventListener('change', () => {
-    if (entrainEnabled && practiceRunning()) restartEntrainment();
+    if (entrainEnabled) restartEntrainment();
   });
   entrainModeSel.addEventListener('change', () => {
     updateEntrainHint();
-    if (entrainEnabled && practiceRunning()) restartEntrainment();
+    if (entrainEnabled) restartEntrainment();
   });
   entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
 
@@ -1251,7 +1256,7 @@
   function stdStart() {
     if (stdRunning) return;
     stdRunning = true; startBtn.textContent = '暫停';
-    acquireWakeLock(); startEntrainment();
+    acquireWakeLock();
     if (stdSecsLeft === 0) stdStartPhase(0);
     stdTicker = setInterval(stdTick, 1000);
   }
@@ -1361,7 +1366,7 @@
   function s111Start() {
     if (s111Running) return;
     s111Running = true; startBtn111.textContent = '暫停';
-    acquireWakeLock(); startEntrainment();
+    acquireWakeLock();
     if (s111SecsLeft === 0) s111StartPhase(0);
     s111Ticker = setInterval(s111Tick, 1000);
   }
@@ -1439,7 +1444,7 @@
   function whStartPowerBreathing() {
     if (whRunning) return;
     whRunning = true; whStartBtn.textContent = '暫停';
-    acquireWakeLock(); startEntrainment();
+    acquireWakeLock();
     playTone(PHASE_TONE.inhale); // first inhale cue
     speak('開始快速深呼吸'); // rapid breaths aren't narrated one by one — too noisy
     whBreathStart = null;
@@ -1780,7 +1785,7 @@
   function obsStart() {
     if (obsRunning) return;
     obsRunning = true; obsStartBtn.textContent = '暫停';
-    acquireWakeLock(); startEntrainment();
+    acquireWakeLock();
     obsTicker = setInterval(obsTick, 1000);
   }
   function obsPause() {
