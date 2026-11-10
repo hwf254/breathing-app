@@ -353,8 +353,24 @@
         <option value="iso">等響節拍（免耳機）</option>
       </select>
     </div>
+    <div class="entrain-row">
+      <label>載波</label>
+      <select id="entrainCarrier">
+        <option value="200">200Hz — 低沉底音</option>
+        <option value="432">432Hz — 柔和樂音</option>
+      </select>
+    </div>
+    <div class="entrain-row">
+      <label>🌀 漸深模式</label>
+      <label class="tog-label" style="margin:0;margin-left:auto">
+        <input type="checkbox" id="entrainDeepen" /><span class="tog-pill"></span>
+      </label>
+    </div>
     <p class="entrain-hint" id="entrainHint">
       <b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。
+    </p>
+    <p class="entrain-hint" id="deepenHint" style="display:none">
+      🌀 <b>漸深模式</b>：頻率將從 10Hz（Alpha）緩緩降到 4Hz（Theta），約 10 分鐘，像催眠引導般帶你逐步深入。<span id="deepenNow"></span>
     </p>
     <div class="vol-row">
       <span>音量</span>
@@ -1074,6 +1090,14 @@
   const entrainHint      = document.getElementById('entrainHint');
   const entrainVol       = document.getElementById('entrainVol');
   const entrainVolVal    = document.getElementById('entrainVolVal');
+  const entrainCarrierSel = document.getElementById('entrainCarrier');
+  const entrainDeepen    = document.getElementById('entrainDeepen');
+  const deepenHintEl     = document.getElementById('deepenHint');
+  const deepenNowEl      = document.getElementById('deepenNow');
+
+  // Deepening ("hypnotic" descent): beat glides from Alpha down into Theta over the duration.
+  const DEEPEN_START = 10, DEEPEN_END = 4, DEEPEN_DUR = 600; // 10Hz -> 4Hz over 10 min
+  let deepenTicker = null;
 
   const ENTRAIN_HINTS = {
     binaural: '<b>雙耳節拍</b>：左右耳輸入不同頻率，大腦感知差頻。建議佩戴耳機。開關一開即播放，不必開始呼吸練習。',
@@ -1101,8 +1125,10 @@
       // mid-waveform and cracks. Wait for the resume, then read the clock fresh.
       if (ctx.state === 'suspended') { try { await ctx.resume(); } catch(e) {} }
       if (gen !== entrainGen || !entrainEnabled) return; // superseded while awaiting
-      const beatHz = parseFloat(entrainFreqSel.value);
-      const carrier = 200;
+      // Deepening overrides the fixed frequency with a slow Alpha→Theta glide.
+      const deepen = entrainDeepen.checked;
+      const beatHz = deepen ? DEEPEN_START : parseFloat(entrainFreqSel.value);
+      const carrier = parseFloat(entrainCarrierSel.value) || 200;
       const t0 = ctx.currentTime + ENTRAIN_LEAD;
       const master = ctx.createGain();
       // Ramp from silence instead of stepping to full volume (a step = an audible click).
@@ -1117,19 +1143,23 @@
         oscL.frequency.value = carrier; oscL.type = 'sine'; gL.gain.value = 1;
         oscL.connect(gL); gL.connect(merger, 0, 0); oscL.start(t0);
         const oscR = ctx.createOscillator(), gR = ctx.createGain();
-        oscR.frequency.value = carrier + beatHz; oscR.type = 'sine'; gR.gain.value = 1;
+        oscR.frequency.setValueAtTime(carrier + beatHz, t0); oscR.type = 'sine'; gR.gain.value = 1;
+        if (deepen) oscR.frequency.linearRampToValueAtTime(carrier + DEEPEN_END, t0 + DEEPEN_DUR);
         oscR.connect(gR); gR.connect(merger, 0, 1); oscR.start(t0);
         entrainNodes = { type:'binaural', oscL, oscR, master };
       } else {
         const osc = ctx.createOscillator(), lfo = ctx.createOscillator();
         const lfoG = ctx.createGain(), ampG = ctx.createGain();
         osc.frequency.value = carrier; osc.type = 'sine';
-        lfo.frequency.value = beatHz; lfo.type = 'sine';
+        lfo.frequency.setValueAtTime(beatHz, t0); lfo.type = 'sine';
+        if (deepen) lfo.frequency.linearRampToValueAtTime(DEEPEN_END, t0 + DEEPEN_DUR);
         lfoG.gain.value = 0.5; lfo.connect(lfoG); ampG.gain.value = 0.5;
         lfoG.connect(ampG.gain); osc.connect(ampG); ampG.connect(master);
         osc.start(t0); lfo.start(t0);
         entrainNodes = { type:'iso', osc, lfo, master };
       }
+      entrainNodes.deepen = deepen; entrainNodes.t0 = t0;
+      startDeepenReadout();
     } catch(e) {}
   }
   function stopEntrainment(force) {
@@ -1137,6 +1167,7 @@
     // (which call this unforced) must NOT silence it. Only a forced stop (toggle off, or a
     // clean restart for a freq/mode change) actually tears the oscillators down.
     if (entrainEnabled && !force) return;
+    stopDeepenReadout();
     if (!entrainNodes) return;
     const n = entrainNodes; entrainNodes = null; // release before the async tail
     try {
@@ -1163,6 +1194,32 @@
   }
   function cancelEntrainRestart() { clearTimeout(entrainRestartTimer); entrainRestartTimer = null; }
 
+  // Live "目前約 X Hz" readout while the deepening glide is in progress.
+  function startDeepenReadout() {
+    stopDeepenReadout();
+    if (!entrainNodes || !entrainNodes.deepen) return;
+    const tick = () => {
+      if (!entrainNodes || !entrainNodes.deepen) { stopDeepenReadout(); return; }
+      const frac = Math.min(1, Math.max(0, (getAudioCtx().currentTime - entrainNodes.t0) / DEEPEN_DUR));
+      const hz = DEEPEN_START + (DEEPEN_END - DEEPEN_START) * frac;
+      deepenNowEl.textContent = '　目前約 ' + hz.toFixed(1) + 'Hz';
+    };
+    tick();
+    deepenTicker = setInterval(tick, 2000);
+  }
+  function stopDeepenReadout() {
+    if (deepenTicker) { clearInterval(deepenTicker); deepenTicker = null; }
+    if (deepenNowEl) deepenNowEl.textContent = '';
+  }
+  // Deepening hides the fixed-frequency row (it's overridden) and swaps the hint.
+  function updateDeepenUI() {
+    const on = entrainDeepen.checked;
+    entrainFreqSel.disabled = on;
+    entrainFreqSel.style.opacity = on ? '0.45' : '';
+    entrainHint.style.display  = on ? 'none' : '';
+    deepenHintEl.style.display = on ? '' : 'none';
+  }
+
   function updateEntrainVol() {
     if (!entrainNodes) return;
     try {
@@ -1184,6 +1241,13 @@
   });
   entrainModeSel.addEventListener('change', () => {
     updateEntrainHint();
+    if (entrainEnabled) restartEntrainment();
+  });
+  entrainCarrierSel.addEventListener('change', () => {
+    if (entrainEnabled) restartEntrainment();
+  });
+  entrainDeepen.addEventListener('change', () => {
+    updateDeepenUI();
     if (entrainEnabled) restartEntrainment();
   });
   entrainVol.addEventListener('input', () => { entrainVolVal.textContent = entrainVol.value + '%'; updateEntrainVol(); });
